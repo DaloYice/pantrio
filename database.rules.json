@@ -20,7 +20,7 @@
     "familyCodes": {
       "$code": {
         ".read": "auth != null",
-        ".write": "auth != null && !data.exists() && newData.isString() && root.child('families').child(newData.val()).child('members').child(auth.uid).child('role').val() === 'admin'"
+        ".write": "auth != null && ((newData.exists() && !data.exists() && newData.isString() && root.child('families').child(newData.val()).child('members').child(auth.uid).child('role').val() === 'admin') || (!newData.exists() && data.exists() && root.child('families').child(data.val()).child('members').child(auth.uid).child('role').val() === 'admin'))"
       }
     }
   }
