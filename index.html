@@ -358,6 +358,7 @@ body {
   color: var(--text2);
   cursor: pointer;
   transition: color 0.2s;
+  position: relative;
   gap: 4px;
   text-transform: uppercase;
   letter-spacing: 0.3px;
@@ -366,6 +367,26 @@ body {
 .nav-item svg { width: 22px; height: 22px; transition: transform 0.2s; }
 .nav-item.active { color: var(--green); }
 .nav-item.active svg { transform: scale(1.1); }
+
+.nav-badge {
+  position: absolute;
+  top: 5px;
+  right: calc(50% - 20px);
+  background: var(--red);
+  color: white;
+  font-size: 10px;
+  font-weight: 700;
+  min-width: 16px;
+  height: 16px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 4px;
+  border: 2px solid var(--surface);
+  pointer-events: none;
+  animation: fadeIn 0.2s ease;
+}
 
 /* ── PAGES ── */
 .page { display: none; padding: 20px; max-width: 680px; margin: 0 auto; }
@@ -1472,6 +1493,7 @@ hr { border: none; border-top: 1px solid var(--border); margin: 16px 0; }
     </button>
     <button class="nav-item" id="nav-shopping" onclick="showPage('shopping-page')">
       <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 0 0-3 3h15.75m-12.75-3h11.218c1.121-2.3 2.1-4.684 2.924-7.138a60.114 60.114 0 0 0-16.536-1.84M7.5 14.25L5.106 5.272M6 20.25a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Zm12.75 0a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Z"/></svg>
+      <span id="nav-shopping-badge" class="nav-badge hidden"></span>
       Einkauf
     </button>
     <button class="nav-item" id="nav-week" onclick="showPage('week-page')">
@@ -1585,6 +1607,15 @@ const app = initializeApp({
 
 const auth = getAuth(app);
 const db = getDatabase(app);
+
+// ─── ENTER KEY LISTENERS ───
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('login-email').addEventListener('keydown', e => { if(e.key==='Enter') document.getElementById('login-password').focus(); });
+  document.getElementById('login-password').addEventListener('keydown', e => { if(e.key==='Enter') window.login(); });
+  document.getElementById('reg-password').addEventListener('keydown', e => { if(e.key==='Enter') window.register(); });
+  document.getElementById('reg-name').addEventListener('keydown', e => { if(e.key==='Enter') document.getElementById('reg-email').focus(); });
+  document.getElementById('reg-email').addEventListener('keydown', e => { if(e.key==='Enter') document.getElementById('reg-password').focus(); });
+});
 
 // ─── STATE ───
 let currentUser = null;
@@ -2532,6 +2563,15 @@ function renderShopping(){
 
   document.getElementById('shopping-count').textContent=unchecked.length||0;
   document.getElementById('shopping-subtitle').textContent=unchecked.length>0?`${unchecked.length} Artikel offen`:'Alle erledigt! 🎉';
+
+  // Nav badge
+  const badge = document.getElementById('nav-shopping-badge');
+  if(unchecked.length > 0){
+    badge.textContent = unchecked.length > 99 ? '99+' : unchecked.length;
+    badge.classList.remove('hidden');
+  } else {
+    badge.classList.add('hidden');
+  }
 
   if(items.length===0){
     container.innerHTML=`<div class="empty-state"><div class="ei">🛒</div><h3>Liste ist leer</h3><p>Füge Rezepte hinzu oder tipp Zutaten manuell ein.</p></div>`;
