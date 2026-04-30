@@ -288,6 +288,40 @@ body {
 
 .topbar-right { display: flex; align-items: center; gap: 10px; }
 
+.family-switcher-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 6px 12px;
+  font-family: 'Instrument Sans', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  cursor: pointer;
+  transition: all 0.15s;
+  max-width: 130px;
+}
+.family-switcher-btn span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.family-switcher-btn:hover { background: var(--border); }
+
+.family-list-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px;
+  border: 2px solid var(--border);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.family-list-item:hover { border-color: var(--green); background: rgba(39,174,96,0.04); }
+.family-list-item.active { border-color: var(--green); background: var(--green-light); }
+.family-list-item .fli-name { font-weight: 600; font-size: 15px; }
+.family-list-item .fli-role { font-size: 12px; color: var(--text2); margin-top: 2px; }
+
 .pantry-badge {
   background: var(--green-light);
   color: var(--green);
@@ -995,6 +1029,36 @@ body {
 .three-col { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
 
 hr { border: none; border-top: 1px solid var(--border); margin: 16px 0; }
+
+/* ── DEMO BANNER ── */
+.demo-banner {
+  background: linear-gradient(135deg, #fff8e1, #fff3cd);
+  border: 2px solid #F59E0B;
+  border-radius: 12px;
+  padding: 12px 16px;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  color: #92400e;
+  font-weight: 500;
+}
+.demo-banner .demo-icon { font-size: 20px; flex-shrink: 0; }
+.demo-exit-btn {
+  margin-left: auto;
+  background: #F59E0B;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 5px 10px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: 'Instrument Sans', sans-serif;
+  white-space: nowrap;
+}
+.demo-exit-btn:hover { background: #d97706; }
 </style>
 </head>
 <body>
@@ -1033,6 +1097,15 @@ hr { border: none; border-top: 1px solid var(--border); margin: 16px 0; }
         <input type="password" id="login-password" placeholder="••••••••">
       </div>
       <button class="btn btn-primary" onclick="login()">Anmelden</button>
+      <div style="display:flex;align-items:center;gap:12px;margin:18px 0 4px">
+        <div style="flex:1;height:1px;background:var(--border)"></div>
+        <span style="font-size:12px;color:var(--text2);font-weight:600">ODER</span>
+        <div style="flex:1;height:1px;background:var(--border)"></div>
+      </div>
+      <button class="btn" onclick="startDemo()" style="width:100%;background:linear-gradient(135deg,#fff8e1,#fef3c7);border:2px solid #F59E0B;color:#92400e;font-size:15px;padding:13px">
+        🧪 Demo ausprobieren – ohne Registrierung
+      </button>
+      <p style="text-align:center;font-size:12px;color:var(--text2);margin-top:10px">Beispieldaten, nichts wird gespeichert</p>
     </div>
 
     <div id="register-form" class="hidden">
@@ -1104,7 +1177,16 @@ hr { border: none; border-top: 1px solid var(--border); margin: 16px 0; }
     <div class="topbar-logo">Pantrio</div>
     <div class="topbar-right">
       <div class="pantry-badge" onclick="showPage('pantry-page')" id="pantry-count-badge">0 Vorräte</div>
+      <button class="family-switcher-btn" onclick="openFamilySwitcher()" id="family-switcher-btn">
+        <span id="topbar-family-name">Familie</span>
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5"/></svg>
+      </button>
     </div>
+  </div>
+  <div id="demo-banner" class="demo-banner hidden" style="margin:12px 16px 0;border-radius:12px">
+    <span class="demo-icon">🧪</span>
+    <span>Demo-Modus – keine Daten werden gespeichert</span>
+    <button class="demo-exit-btn" onclick="exitDemo()">✕ Beenden</button>
   </div>
 
   <!-- HOME -->
@@ -1326,21 +1408,52 @@ hr { border: none; border-top: 1px solid var(--border); margin: 16px 0; }
 
   <!-- FAMILY PAGE -->
   <div id="family-page" class="page">
-    <div class="section-title">Familie</div>
-    <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:14px;">
-      <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text2);margin-bottom:6px">Familienname</div>
-      <div style="font-family:'Fraunces',serif;font-size:24px;font-weight:700" id="fam-name-disp">–</div>
+    <div class="section-title">Konto & Familie</div>
+
+    <!-- Account info -->
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px;margin-bottom:14px;display:flex;align-items:center;gap:14px">
+      <div style="width:46px;height:46px;border-radius:50%;background:var(--green);color:white;display:flex;align-items:center;justify-content:center;font-family:'Fraunces',serif;font-size:20px;font-weight:900;flex-shrink:0" id="fam-avatar">?</div>
+      <div style="flex:1">
+        <div style="font-weight:700;font-size:16px" id="fam-username">–</div>
+        <div style="font-size:13px;color:var(--text2)" id="fam-useremail">–</div>
+      </div>
+      <button class="btn btn-red btn-sm" onclick="logout()">Abmelden</button>
     </div>
-    <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:14px;cursor:pointer" onclick="showInviteModal()">
-      <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text2);margin-bottom:6px">Einladungscode</div>
-      <div style="font-family:monospace;font-size:28px;font-weight:900;letter-spacing:6px;color:var(--green)" id="fam-code-disp">••••••</div>
-      <div style="font-size:12px;color:var(--text2);margin-top:6px">Tippen zum Anzeigen & Kopieren</div>
+
+    <!-- Active family -->
+    <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text2);margin-bottom:8px">Aktive Familie</div>
+    <div style="background:var(--surface);border:2px solid var(--green);border-radius:var(--radius);padding:18px;margin-bottom:14px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+        <div>
+          <div style="font-family:'Fraunces',serif;font-size:22px;font-weight:700" id="fam-name-disp">–</div>
+          <div style="font-size:12px;color:var(--green);font-weight:600;margin-top:2px">✓ Aktiv</div>
+        </div>
+      </div>
+      <!-- Invite code prominent -->
+      <div style="background:var(--green-light);border-radius:12px;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px">
+        <div>
+          <div style="font-size:11px;font-weight:700;color:var(--green);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px">Einladungscode</div>
+          <div style="font-family:monospace;font-size:26px;font-weight:900;letter-spacing:6px;color:var(--text)" id="fam-code-disp">••••••</div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <button class="btn btn-primary btn-sm" onclick="showInviteModal()">👁 Anzeigen</button>
+          <button class="btn btn-secondary btn-sm" onclick="shareInviteCode()">📤 Teilen</button>
+        </div>
+      </div>
     </div>
-    <div style="font-weight:700;font-size:15px;margin-bottom:10px">Mitglieder</div>
+
+    <!-- Members -->
+    <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text2);margin-bottom:8px">Mitglieder</div>
     <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-bottom:20px">
       <ul id="member-list" style="list-style:none;padding:0 16px"></ul>
     </div>
-    <button class="btn btn-red" style="width:100%" onclick="logout()">Abmelden</button>
+
+    <!-- Other families -->
+    <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text2);margin-bottom:8px">Meine Familien</div>
+    <div id="all-families-list" style="display:flex;flex-direction:column;gap:8px;margin-bottom:12px"></div>
+    <div style="display:flex;gap:10px">
+      <button class="btn btn-outline" style="flex:1" onclick="openFamilySwitcher()">＋ Familie hinzufügen</button>
+    </div>
   </div>
 
   <!-- BOTTOM NAV -->
@@ -1378,6 +1491,48 @@ hr { border: none; border-top: 1px solid var(--border); margin: 16px 0; }
     <div class="modal-actions">
       <button class="btn btn-secondary" onclick="closeModal('invite-modal')">Schließen</button>
       <button class="btn btn-primary" onclick="copyInviteCode()">📋 Kopieren</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Family Switcher -->
+<div id="family-switcher-modal" class="modal-overlay hidden" onclick="closeModal('family-switcher-modal')">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-handle"></div>
+    <h3>Familie wechseln</h3>
+    <p>Wähle eine Familie oder füge eine neue hinzu.</p>
+
+    <div id="switcher-families-list" style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px"></div>
+
+    <div id="switcher-add-section">
+      <div style="display:flex;gap:8px;margin-bottom:12px">
+        <button class="btn btn-outline" style="flex:1" onclick="showSwitcherCreate()">✨ Neue Familie</button>
+        <button class="btn btn-outline" style="flex:1" onclick="showSwitcherJoin()">🔗 Beitreten</button>
+      </div>
+    </div>
+
+    <div id="switcher-create-form" class="hidden">
+      <div style="font-weight:700;margin-bottom:10px">Neue Familie erstellen</div>
+      <div class="form-group"><label>Familienname</label><input type="text" id="sw-family-name" placeholder="z.B. Schwiegereltern Müller"></div>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-secondary" onclick="hideSwitcherForms()">Zurück</button>
+        <button class="btn btn-primary" onclick="createFamilyFromSwitcher()" style="flex:1">Erstellen</button>
+      </div>
+    </div>
+
+    <div id="switcher-join-form" class="hidden">
+      <div style="font-weight:700;margin-bottom:10px">Familie beitreten</div>
+      <div class="form-group"><label>Einladungscode</label><input type="text" id="sw-join-code" placeholder="ABC123" maxlength="6" style="text-transform:uppercase;letter-spacing:6px;font-size:20px;text-align:center"></div>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-secondary" onclick="hideSwitcherForms()">Zurück</button>
+        <button class="btn btn-primary" onclick="joinFamilyFromSwitcher()" style="flex:1">Beitreten</button>
+      </div>
+    </div>
+
+    <div id="switcher-error" class="error-msg hidden"></div>
+    <div class="modal-actions" style="margin-top:8px">
+      <button class="btn btn-secondary" onclick="closeModal('family-switcher-modal')">Schließen</button>
+      <button class="btn btn-red" onclick="logout()">Abmelden</button>
     </div>
   </div>
 </div>
@@ -1438,11 +1593,156 @@ let weekPlan = {};
 let editingRecipeId = null;
 let activePantryCategory = 'Alle';
 let activeRecipeFilter = 'Alle';
-let pendingDaySlot = null; // {day, meal}
+let pendingDaySlot = null;
+let isDemoMode = false;
 
 const DAYS = ['Montag','Dienstag','Mittwoch','Donnerstag','Freitag','Samstag','Sonntag'];
 const MEALS = ['Frühstück','Mittag','Abend'];
 const CAT_ICONS = { 'Gemüse & Obst':'🥦','Fleisch & Fisch':'🥩','Milchprodukte':'🧀','Trockenwaren':'🌾','Konserven':'🥫','Gewürze':'🧂','Getränke':'🥤','Sonstiges':'📦' };
+
+// ─── DEMO DATA ───
+const DEMO_PANTRY = {
+  p1: { name:'Nudeln', emoji:'🍝', category:'Trockenwaren', amount:500, unit:'g', status:'ok' },
+  p2: { name:'Tomaten', emoji:'🍅', category:'Gemüse & Obst', amount:4, unit:'Stück', status:'ok' },
+  p3: { name:'Eier', emoji:'🥚', category:'Milchprodukte', amount:6, unit:'Stück', status:'low' },
+  p4: { name:'Käse', emoji:'🧀', category:'Milchprodukte', amount:200, unit:'g', status:'ok' },
+  p5: { name:'Zwiebeln', emoji:'🧅', category:'Gemüse & Obst', amount:3, unit:'Stück', status:'ok' },
+  p6: { name:'Knoblauch', emoji:'🧄', category:'Gemüse & Obst', amount:1, unit:'Knolle', status:'ok' },
+  p7: { name:'Olivenöl', emoji:'🫙', category:'Gewürze', amount:500, unit:'ml', status:'ok' },
+  p8: { name:'Reis', emoji:'🍚', category:'Trockenwaren', amount:1000, unit:'g', status:'ok' },
+  p9: { name:'Hähnchenbrust', emoji:'🍗', category:'Fleisch & Fisch', amount:400, unit:'g', status:'low' },
+  p10: { name:'Sahne', emoji:'🥛', category:'Milchprodukte', amount:200, unit:'ml', status:'ok' },
+  p11: { name:'Tomatenmark', emoji:'🥫', category:'Konserven', amount:1, unit:'Dose', status:'ok' },
+  p12: { name:'Salz', emoji:'🧂', category:'Gewürze', amount:null, unit:null, status:'ok' },
+  p13: { name:'Pfeffer', emoji:'🧂', category:'Gewürze', amount:null, unit:null, status:'ok' },
+  p14: { name:'Parmesan', emoji:'🧀', category:'Milchprodukte', amount:100, unit:'g', status:'critical' },
+};
+
+const DEMO_RECIPES = {
+  r1: {
+    name:'Tomatenpasta', emoji:'🍝', category:'Hauptgericht', portions:4, prepTime:20, difficulty:'Einfach',
+    description:'Ein schnelles und leckeres Klassiker-Gericht für die ganze Familie.',
+    ingredients:[
+      {name:'Nudeln',amount:400,unit:'g'},{name:'Tomaten',amount:4,unit:'Stück'},
+      {name:'Knoblauch',amount:2,unit:'Zehen'},{name:'Olivenöl',amount:3,unit:'EL'},
+      {name:'Parmesan',amount:50,unit:'g'},{name:'Salz',amount:1,unit:'Prise'},
+    ],
+    steps:['Nudeln in Salzwasser kochen bis sie al dente sind.','Knoblauch fein hacken und in Olivenöl anbraten.','Tomaten würfeln und 10 Minuten köcheln lassen.','Nudeln abgießen, mit Sauce mischen und mit Parmesan servieren.']
+  },
+  r2: {
+    name:'Shakshuka', emoji:'🍳', category:'Frühstück', portions:2, prepTime:25, difficulty:'Einfach',
+    description:'Orientalisches Frühstück mit Eiern in würziger Tomatensauce.',
+    ingredients:[
+      {name:'Eier',amount:4,unit:'Stück'},{name:'Tomaten',amount:3,unit:'Stück'},
+      {name:'Zwiebeln',amount:1,unit:'Stück'},{name:'Paprika',amount:1,unit:'Stück'},
+      {name:'Knoblauch',amount:2,unit:'Zehen'},{name:'Tomatenmark',amount:2,unit:'EL'},
+      {name:'Kreuzkümmel',amount:1,unit:'TL'},
+    ],
+    steps:['Zwiebeln und Knoblauch in Öl glasig dünsten.','Tomaten und Tomatenmark hinzufügen, würzen.','10 Minuten köcheln, dann Mulden formen.','Eier in die Mulden schlagen, zudecken und stocken lassen.']
+  },
+  r3: {
+    name:'Hähnchen-Sahne-Pasta', emoji:'🍗', category:'Hauptgericht', portions:4, prepTime:30, difficulty:'Mittel',
+    description:'Cremige Pasta mit zartem Hähnchen – ein Familienklassiker.',
+    ingredients:[
+      {name:'Hähnchenbrust',amount:400,unit:'g'},{name:'Nudeln',amount:300,unit:'g'},
+      {name:'Sahne',amount:200,unit:'ml'},{name:'Käse',amount:100,unit:'g'},
+      {name:'Knoblauch',amount:2,unit:'Zehen'},{name:'Olivenöl',amount:2,unit:'EL'},
+    ],
+    steps:['Hähnchen in Streifen schneiden und anbraten.','Knoblauch dazugeben, kurz mitbraten.','Mit Sahne ablöschen, Käse einrühren.','Gekochte Nudeln untermengen und servieren.']
+  },
+  r4: {
+    name:'Reispfanne mit Gemüse', emoji:'🍱', category:'Hauptgericht', portions:3, prepTime:25, difficulty:'Einfach',
+    description:'Schnelle Reispfanne – ideal für Reste.',
+    ingredients:[
+      {name:'Reis',amount:300,unit:'g'},{name:'Paprika',amount:1,unit:'Stück'},
+      {name:'Zwiebeln',amount:1,unit:'Stück'},{name:'Sojasoße',amount:3,unit:'EL'},
+      {name:'Eier',amount:2,unit:'Stück'},{name:'Olivenöl',amount:2,unit:'EL'},
+    ],
+    steps:['Reis kochen und abkühlen lassen.','Gemüse würfeln und in Öl scharf anbraten.','Reis dazugeben und mit Sojasoße würzen.','Eier verquirlen, in die Pfanne geben und verrühren.']
+  },
+  r5: {
+    name:'Knoblauch-Käse-Toast', emoji:'🧀', category:'Snack', portions:2, prepTime:10, difficulty:'Einfach',
+    description:'Perfekter schneller Snack oder Vorspeise.',
+    ingredients:[
+      {name:'Käse',amount:150,unit:'g'},{name:'Knoblauch',amount:2,unit:'Zehen'},
+      {name:'Olivenöl',amount:2,unit:'EL'},{name:'Toastbrot',amount:4,unit:'Scheiben'},
+    ],
+    steps:['Brot toasten.','Knoblauch mit Olivenöl mischen und aufs Brot streichen.','Käse drauf und unter den Grill bis er schmilzt.']
+  }
+};
+
+const DEMO_SHOPPING = {
+  s1: { name:'Paprika', amount:2, unit:'Stück', category:'Gemüse & Obst', from:'Shakshuka', checked:false },
+  s2: { name:'Sojasoße', amount:1, unit:'Flasche', category:'Konserven', from:'Reispfanne', checked:false },
+  s3: { name:'Kreuzkümmel', amount:1, unit:'Päckchen', category:'Gewürze', from:'Shakshuka', checked:false },
+  s4: { name:'Toastbrot', amount:1, unit:'Packung', category:'Trockenwaren', from:'Käse-Toast', checked:true },
+};
+
+const DEMO_WEEKPLAN = {
+  'Montag':{ 'Mittag':'r1', 'Abend':'r3' },
+  'Dienstag':{ 'Frühstück':'r2' },
+  'Mittwoch':{ 'Mittag':'r4' },
+  'Donnerstag':{ 'Abend':'r3' },
+  'Freitag':{ 'Mittag':'r5', 'Abend':'r1' },
+};
+
+window.startDemo = () => {
+  isDemoMode = true;
+  currentUser = { uid: 'demo', displayName: 'Demo-Nutzer' };
+  familyId = 'demo';
+  familyData = { name: 'Musterfamilie', code: 'DEMO42', members: { demo: { name: 'Demo-Nutzer', role: 'admin' } } };
+  pantry = JSON.parse(JSON.stringify(DEMO_PANTRY));
+  recipes = JSON.parse(JSON.stringify(DEMO_RECIPES));
+  shoppingList = JSON.parse(JSON.stringify(DEMO_SHOPPING));
+  weekPlan = JSON.parse(JSON.stringify(DEMO_WEEKPLAN));
+
+  document.getElementById('auth-screen').style.display = 'none';
+  document.getElementById('app-screen').style.display = 'block';
+  document.getElementById('demo-banner').classList.remove('hidden');
+  document.getElementById('fam-name-disp').textContent = familyData.name;
+  document.getElementById('modal-code').textContent = familyData.code;
+  document.getElementById('topbar-family-name').textContent = familyData.name;
+  document.getElementById('fam-username').textContent = 'Demo-Nutzer';
+  document.getElementById('fam-useremail').textContent = 'demo@pantrio.de';
+  document.getElementById('fam-avatar').textContent = 'D';
+
+  updateGreeting();
+  renderPantry();
+  renderRecipes();
+  renderHome();
+  renderShopping();
+  buildWeekGrid();
+  renderWeekGrid();
+  renderFamilyMembers();
+
+  document.getElementById('hc-recipes').textContent = Object.keys(recipes).length;
+  document.getElementById('hc-shopping').textContent = Object.values(shoppingList).filter(i=>!i.checked).length;
+  const weekTotal = Object.values(weekPlan).reduce((a,d)=>a+Object.keys(d||{}).length,0);
+  document.getElementById('hc-week').textContent = weekTotal;
+};
+
+window.exitDemo = () => {
+  isDemoMode = false;
+  currentUser = null; familyId = null; familyData = null;
+  pantry = {}; recipes = {}; shoppingList = {}; weekPlan = {};
+  document.getElementById('app-screen').style.display = 'none';
+  document.getElementById('demo-banner').classList.add('hidden');
+  document.getElementById('auth-screen').style.display = 'flex';
+};
+
+function renderFamilyMembers() {
+  const members = familyData?.members || {};
+  const ul = document.getElementById('member-list');
+  ul.innerHTML = '';
+  Object.entries(members).forEach(([uid, m]) => {
+    ul.innerHTML += `<li style="display:flex;align-items:center;gap:12px;padding:14px 0;border-bottom:1px solid var(--border)">
+      <div style="width:38px;height:38px;border-radius:50%;background:var(--green);color:white;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:15px;flex-shrink:0">${(m.name||'?')[0].toUpperCase()}</div>
+      <div style="flex:1"><div style="font-weight:600">${m.name||'Unbekannt'} ${uid===currentUser.uid?'<span style="background:var(--green-light);color:var(--green);padding:2px 8px;border-radius:20px;font-size:11px;font-weight:700">Du</span>':''}</div>
+      <div style="font-size:12px;color:var(--text2)">${m.role==='admin'?'👑 Admin':'👤 Mitglied'}</div></div></li>`;
+  });
+  const last = ul.querySelector('li:last-child');
+  if (last) last.style.borderBottom = 'none';
+}
 
 // ─── AUTH ───
 window.switchAuthTab = t => {
@@ -1530,6 +1830,26 @@ function loadApp(){
   document.getElementById('family-screen').classList.add('hidden');
   document.getElementById('app-screen').style.display='block';
   updateGreeting();
+
+  // Update account info in family page
+  if(currentUser){
+    const name = currentUser.displayName||'Nutzer';
+    document.getElementById('fam-username').textContent = name;
+    document.getElementById('fam-useremail').textContent = currentUser.email||'';
+    document.getElementById('fam-avatar').textContent = name[0].toUpperCase();
+  }
+
+  // Ensure current family is in user's families list
+  if(!isDemoMode && familyId){
+    get(ref(db,`families/${familyId}/name`)).then(snap=>{
+      const name = snap.val()||'Familie';
+      get(ref(db,`families/${familyId}/members/${currentUser.uid}/role`)).then(rSnap=>{
+        const role = rSnap.val()||'member';
+        update(ref(db,`users/${currentUser.uid}/families`), { [familyId]:{ name, role } });
+      });
+    });
+  }
+
   listenFamily(); listenPantry(); listenRecipes(); listenShopping(); listenWeekPlan();
   buildWeekGrid();
 }
@@ -1542,25 +1862,132 @@ function updateGreeting(){
 }
 
 // ─── FAMILY LISTENER ───
+let allUserFamilies = {}; // familyId -> {name, role}
+
 function listenFamily(){
   onValue(ref(db,`families/${familyId}`),snap=>{
     if(!snap.exists()) return;
     familyData=snap.val();
+    document.getElementById('topbar-family-name').textContent=familyData.name;
     document.getElementById('fam-name-disp').textContent=familyData.name;
     document.getElementById('modal-code').textContent=familyData.code;
-    const members=familyData.members||{};
-    const ul=document.getElementById('member-list');
-    ul.innerHTML='';
-    Object.entries(members).forEach(([uid,m])=>{
-      ul.innerHTML+=`<li style="display:flex;align-items:center;gap:12px;padding:14px 0;border-bottom:1px solid var(--border)">
-        <div style="width:38px;height:38px;border-radius:50%;background:var(--green);color:white;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:15px;flex-shrink:0">${(m.name||'?')[0].toUpperCase()}</div>
-        <div style="flex:1"><div style="font-weight:600">${m.name||'Unbekannt'} ${uid===currentUser.uid?'<span style="background:var(--green-light);color:var(--green);padding:2px 8px;border-radius:20px;font-size:11px;font-weight:700">Du</span>':''}</div>
-        <div style="font-size:12px;color:var(--text2)">${m.role==='admin'?'👑 Admin':'👤 Mitglied'}</div></div></li>`;
-    });
-    const last=ul.querySelector('li:last-child');
-    if(last) last.style.borderBottom='none';
+    renderFamilyMembers();
+    renderAllFamiliesList();
   });
 }
+
+async function loadAllUserFamilies(){
+  const snap = await get(ref(db,`users/${currentUser.uid}/families`));
+  allUserFamilies = snap.exists() ? snap.val() : {};
+  // Also include current family in case it's only stored as familyId (legacy)
+  if(familyId && !allUserFamilies[familyId]){
+    allUserFamilies[familyId] = { name: familyData?.name||'Familie', role:'member' };
+  }
+}
+
+function renderAllFamiliesList(){
+  // Update family page list
+  const container = document.getElementById('all-families-list');
+  if(!container) return;
+  container.innerHTML = '';
+  Object.entries(allUserFamilies).forEach(([fid, f])=>{
+    const div = document.createElement('div');
+    div.className = 'family-list-item' + (fid===familyId?' active':'');
+    div.innerHTML = `
+      <div style="width:36px;height:36px;border-radius:10px;background:${fid===familyId?'var(--green)':'var(--surface2)'};color:${fid===familyId?'white':'var(--text2)'};display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">🏠</div>
+      <div style="flex:1">
+        <div class="fli-name">${f.name||'Familie'}</div>
+        <div class="fli-role">${f.role==='admin'?'👑 Admin':'👤 Mitglied'}${fid===familyId?' · Aktiv':''}</div>
+      </div>
+      ${fid!==familyId?`<button class="btn btn-secondary btn-sm" onclick="switchToFamily('${fid}')">Wechseln</button>`:'<span style="font-size:12px;color:var(--green);font-weight:700">✓</span>'}
+    `;
+    container.appendChild(div);
+  });
+}
+
+window.switchToFamily = async(fid) => {
+  if(fid===familyId) return;
+  familyId = fid;
+  await set(ref(db,`users/${currentUser.uid}/familyId`), fid);
+  // Reset state
+  pantry={}; recipes={}; shoppingList={}; weekPlan={};
+  listenFamily(); listenPantry(); listenRecipes(); listenShopping(); listenWeekPlan();
+  buildWeekGrid();
+  showPage('home-page');
+  closeModal('family-switcher-modal');
+};
+
+window.openFamilySwitcher = async() => {
+  await loadAllUserFamilies();
+  renderSwitcherFamilies();
+  hideSwitcherForms();
+  document.getElementById('switcher-error').classList.add('hidden');
+  document.getElementById('family-switcher-modal').classList.remove('hidden');
+};
+
+function renderSwitcherFamilies(){
+  const list = document.getElementById('switcher-families-list');
+  list.innerHTML = '';
+  Object.entries(allUserFamilies).forEach(([fid,f])=>{
+    const div = document.createElement('div');
+    div.className = 'family-list-item' + (fid===familyId?' active':'');
+    div.innerHTML = `
+      <div style="width:36px;height:36px;border-radius:10px;background:${fid===familyId?'var(--green)':'var(--surface2)'};color:${fid===familyId?'white':'var(--text2)'};display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">🏠</div>
+      <div style="flex:1">
+        <div class="fli-name">${f.name||'Familie'}</div>
+        <div class="fli-role">${f.role==='admin'?'👑 Admin':'👤 Mitglied'}</div>
+      </div>
+      ${fid===familyId?'<span style="font-size:12px;color:var(--green);font-weight:700">Aktiv ✓</span>':`<button class="btn btn-secondary btn-sm" onclick="switchToFamily('${fid}')">Wechseln</button>`}
+    `;
+    list.appendChild(div);
+  });
+}
+
+window.showSwitcherCreate = () => { hideSwitcherForms(); document.getElementById('switcher-create-form').classList.remove('hidden'); document.getElementById('switcher-add-section').classList.add('hidden'); };
+window.showSwitcherJoin = () => { hideSwitcherForms(); document.getElementById('switcher-join-form').classList.remove('hidden'); document.getElementById('switcher-add-section').classList.add('hidden'); };
+window.hideSwitcherForms = () => {
+  document.getElementById('switcher-create-form').classList.add('hidden');
+  document.getElementById('switcher-join-form').classList.add('hidden');
+  document.getElementById('switcher-add-section').classList.remove('hidden');
+};
+
+window.createFamilyFromSwitcher = async() => {
+  const name = document.getElementById('sw-family-name').value.trim();
+  if(!name){ swErr('Bitte einen Namen eingeben.'); return; }
+  const code = Math.random().toString(36).substring(2,8).toUpperCase();
+  const fr = push(ref(db,'families'));
+  const fid = fr.key;
+  await set(fr,{ name, code, createdBy:currentUser.uid, createdAt:Date.now(), members:{ [currentUser.uid]:{ name:currentUser.displayName, role:'admin', joinedAt:Date.now() } } });
+  await set(ref(db,`familyCodes/${code}`), fid);
+  // Save to user's families list
+  await update(ref(db,`users/${currentUser.uid}/families`), { [fid]:{ name, role:'admin' } });
+  await switchToFamily(fid);
+  closeModal('family-switcher-modal');
+};
+
+window.joinFamilyFromSwitcher = async() => {
+  const code = document.getElementById('sw-join-code').value.trim().toUpperCase();
+  if(code.length!==6){ swErr('Bitte 6-stelligen Code eingeben.'); return; }
+  const snap = await get(ref(db,`familyCodes/${code}`));
+  if(!snap.exists()){ swErr('Code nicht gefunden. Bitte prüfen.'); return; }
+  const fid = snap.val();
+  if(allUserFamilies[fid]){ swErr('Du bist dieser Familie bereits beigetreten.'); return; }
+  const famSnap = await get(ref(db,`families/${fid}/name`));
+  const famName = famSnap.val()||'Familie';
+  await update(ref(db,`families/${fid}/members/${currentUser.uid}`),{ name:currentUser.displayName, role:'member', joinedAt:Date.now() });
+  await update(ref(db,`users/${currentUser.uid}/families`), { [fid]:{ name:famName, role:'member' } });
+  await switchToFamily(fid);
+  closeModal('family-switcher-modal');
+};
+
+function swErr(msg){ const e=document.getElementById('switcher-error'); e.textContent=msg; e.classList.remove('hidden'); }
+
+window.shareInviteCode = () => {
+  const code = familyData?.code||'';
+  if(navigator.share){
+    navigator.share({ title:'Pantrio Einladung', text:`Tritt meiner Familie in Pantrio bei! Code: ${code}`, url: window.location.href });
+  } else { showInviteModal(); }
+};
 
 // ─── PANTRY ───
 function listenPantry(){
@@ -1590,7 +2017,8 @@ window.savePantryItem=async()=>{
     status:document.getElementById('p-status').value,
     addedAt:Date.now()
   };
-  await push(ref(db,`families/${familyId}/pantry`),item);
+  if(isDemoMode){ const key='p'+Date.now(); pantry[key]=item; renderPantry(); renderHome(); renderRecipes(); }
+  else await push(ref(db,`families/${familyId}/pantry`),item);
   document.getElementById('p-name').value='';
   document.getElementById('p-emoji').value='';
   document.getElementById('p-amount').value='';
@@ -1599,7 +2027,10 @@ window.savePantryItem=async()=>{
   document.getElementById('p-name').focus();
 };
 
-window.deletePantryItem=async(id)=>{ await remove(ref(db,`families/${familyId}/pantry/${id}`)); };
+window.deletePantryItem=async(id)=>{
+  if(isDemoMode){ delete pantry[id]; renderPantry(); renderHome(); renderRecipes(); return; }
+  await remove(ref(db,`families/${familyId}/pantry/${id}`));
+};
 
 window.filterPantry=(q)=>renderPantry(q);
 
@@ -1839,6 +2270,7 @@ window.showDetail=(id)=>{
 
 window.deleteRecipe=async(id)=>{
   if(!confirm('Rezept wirklich löschen?')) return;
+  if(isDemoMode){ delete recipes[id]; renderRecipes(); renderHome(); showPage('recipes-page'); return; }
   await remove(ref(db,`families/${familyId}/recipes/${id}`));
   showPage('recipes-page');
 };
@@ -1930,8 +2362,15 @@ window.saveRecipe=async()=>{
     updatedBy:currentUser.displayName
   };
 
-  if(editingRecipeId){ await update(ref(db,`families/${familyId}/recipes/${editingRecipeId}`),data); }
-  else{ data.createdAt=Date.now(); data.createdBy=currentUser.displayName; await push(ref(db,`families/${familyId}/recipes`),data); }
+  if(editingRecipeId){
+    if(isDemoMode){ recipes[editingRecipeId]={...recipes[editingRecipeId],...data}; }
+    else await update(ref(db,`families/${familyId}/recipes/${editingRecipeId}`),data);
+  } else {
+    data.createdAt=Date.now(); data.createdBy=currentUser.displayName;
+    if(isDemoMode){ const key='r'+Date.now(); recipes[key]=data; }
+    else await push(ref(db,`families/${familyId}/recipes`),data);
+  }
+  if(isDemoMode){ renderRecipes(); renderHome(); document.getElementById('hc-recipes').textContent=Object.keys(recipes).length; }
   showPage('recipes-page');
 };
 
@@ -1958,30 +2397,36 @@ function addIngsToShop(recipe, portions){
     else{ updated[key]={ name:ing.name, amount:amt, unit:ing.unit||'', category:recipe.category||'Sonstiges', from:recipe.name, checked:false }; }
   });
 
-  set(ref(db,`families/${familyId}/shoppingList`),updated);
+  if(isDemoMode){ shoppingList=updated; renderShopping(); document.getElementById('hc-shopping').textContent=Object.values(shoppingList).filter(i=>!i.checked).length; }
+  else set(ref(db,`families/${familyId}/shoppingList`),updated);
 }
 
 window.addManualShopItem=()=>{
   const val=document.getElementById('shop-manual-input').value.trim();
   if(!val) return;
   const key='m_'+Date.now();
-  update(ref(db,`families/${familyId}/shoppingList`),{ [key]:{ name:val, amount:null, unit:'', category:'Sonstiges', from:null, checked:false } });
+  const item={ name:val, amount:null, unit:'', category:'Sonstiges', from:null, checked:false };
+  if(isDemoMode){ shoppingList[key]=item; renderShopping(); }
+  else update(ref(db,`families/${familyId}/shoppingList`),{ [key]:item });
   document.getElementById('shop-manual-input').value='';
 };
 
 window.toggleShopItem=(key)=>{
   const item=shoppingList[key]; if(!item) return;
+  if(isDemoMode){ shoppingList[key].checked=!item.checked; renderShopping(); document.getElementById('hc-shopping').textContent=Object.values(shoppingList).filter(i=>!i.checked).length; return; }
   update(ref(db,`families/${familyId}/shoppingList/${key}`),{checked:!item.checked});
 };
 
 window.clearCheckedItems=()=>{
   const upd={};
   Object.entries(shoppingList).forEach(([k,v])=>{ if(!v.checked) upd[k]=v; });
+  if(isDemoMode){ shoppingList=upd; renderShopping(); return; }
   set(ref(db,`families/${familyId}/shoppingList`),upd);
 };
 
 window.clearAllShopping=()=>{
   if(!confirm('Einkaufsliste wirklich leeren?')) return;
+  if(isDemoMode){ shoppingList={}; renderShopping(); document.getElementById('hc-shopping').textContent=0; return; }
   set(ref(db,`families/${familyId}/shoppingList`),{});
 };
 
@@ -2114,12 +2559,27 @@ window.openDayModal=(day,meal)=>{
 };
 
 async function setMealForDay(day,meal,recipeId){
+  if(isDemoMode){
+    if(!weekPlan[day]) weekPlan[day]={};
+    weekPlan[day][meal]=recipeId;
+    const total=Object.values(weekPlan).reduce((a,d)=>a+Object.keys(d||{}).length,0);
+    document.getElementById('hc-week').textContent=total;
+    renderWeekGrid();
+    return;
+  }
   await update(ref(db,`families/${familyId}/weekPlan/${day}`),{[meal]:recipeId});
 }
 
 window.removeMealFromDay=async()=>{
   if(!pendingDaySlot) return;
   const {day,meal}=pendingDaySlot;
+  if(isDemoMode){
+    if(weekPlan[day]) delete weekPlan[day][meal];
+    const total=Object.values(weekPlan).reduce((a,d)=>a+Object.keys(d||{}).length,0);
+    document.getElementById('hc-week').textContent=total;
+    renderWeekGrid();
+    closeModal('day-recipe-modal'); return;
+  }
   const dayData={...(weekPlan[day]||{})};
   delete dayData[meal];
   await set(ref(db,`families/${familyId}/weekPlan/${day}`),dayData);
