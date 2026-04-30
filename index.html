@@ -506,8 +506,83 @@ body {
 .match-1 { background: var(--orange-light); color: #92400e; }
 .match-few { background: var(--red-light); color: var(--red); }
 
-/* ── PANTRY PAGE ── */
-.pantry-search {
+.pantry-tab {
+  flex: 1;
+  padding: 9px 6px;
+  border: none;
+  background: transparent;
+  border-radius: 9px;
+  font-family: 'Instrument Sans', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text2);
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+.pantry-tab.active {
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: var(--shadow-sm);
+}
+
+.staple-alert {
+  background: linear-gradient(135deg, #fff3cd, #fef9e7);
+  border: 2px solid var(--orange);
+  border-radius: var(--radius-sm);
+  padding: 14px 16px;
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  animation: fadeIn 0.3s ease;
+}
+.staple-alert .alert-icon { font-size: 24px; flex-shrink: 0; }
+.staple-alert .alert-info { flex: 1; }
+.staple-alert .alert-name { font-weight: 700; font-size: 14px; }
+.staple-alert .alert-desc { font-size: 12px; color: #92400e; margin-top: 2px; }
+.staple-alert .alert-btn {
+  background: var(--orange);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 7px 12px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: 'Instrument Sans', sans-serif;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.staple-alert .alert-btn:hover { background: #d97706; }
+
+.staple-item {
+  background: var(--surface);
+  border-radius: var(--radius-sm);
+  padding: 13px 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border: 1px solid var(--border);
+  margin-bottom: 8px;
+}
+.staple-item .star { color: var(--orange); font-size: 14px; flex-shrink: 0; }
+
+.cook-item {
+  display: flex;
+  align-items: center;
+  padding: 13px 16px;
+  background: var(--surface);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  margin-bottom: 8px;
+  gap: 12px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.cook-item:hover { background: var(--surface2); }
+.cook-item.cooked { opacity: 0.5; }
+.cook-item.cooked .cook-name { text-decoration: line-through; }
   position: relative;
   margin-bottom: 16px;
 }
@@ -1281,10 +1356,16 @@ hr { border: none; border-top: 1px solid var(--border); margin: 16px 0; }
       <button class="btn btn-primary btn-sm" onclick="toggleAddPantryForm()">+ Hinzufügen</button>
     </div>
 
+    <!-- Tabs -->
+    <div style="display:flex;background:var(--surface2);border-radius:12px;padding:4px;margin-bottom:16px;gap:4px">
+      <button class="pantry-tab active" id="ptab-stock" onclick="switchPantryTab('stock')">🥕 Vorrat</button>
+      <button class="pantry-tab" id="ptab-staples" onclick="switchPantryTab('staples')">⭐ Stammliste</button>
+      <button class="pantry-tab" id="ptab-cook" onclick="switchPantryTab('cook')">👨‍🍳 Kochen</button>
+    </div>
+
+    <!-- ADD FORM -->
     <div id="add-pantry-form" class="add-pantry-form hidden">
       <h4>Zutat hinzufügen</h4>
-
-      <!-- Ingredient search from recipes -->
       <div class="form-group" style="margin-bottom:12px">
         <label>Aus Rezepten suchen</label>
         <div style="position:relative">
@@ -1293,26 +1374,17 @@ hr { border: none; border-top: 1px solid var(--border); margin: 16px 0; }
         </div>
         <div id="p-search-results" class="hidden" style="background:var(--surface);border:2px solid var(--green);border-radius:10px;margin-top:4px;max-height:200px;overflow-y:auto;box-shadow:var(--shadow)"></div>
       </div>
-
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
         <div style="flex:1;height:1px;background:var(--border)"></div>
         <span style="font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase">oder manuell</span>
         <div style="flex:1;height:1px;background:var(--border)"></div>
       </div>
-
       <div class="add-form-grid2">
-        <div class="form-group" style="margin:0">
-          <label>Emoji</label>
-          <input type="text" id="p-emoji" placeholder="🥕" maxlength="4">
-        </div>
-        <div class="form-group" style="margin:0">
-          <label>Name *</label>
-          <input type="text" id="p-name" placeholder="z.B. Nudeln" onkeydown="if(event.key==='Enter')savePantryItem()">
-        </div>
+        <div class="form-group" style="margin:0"><label>Emoji</label><input type="text" id="p-emoji" placeholder="🥕" maxlength="4"></div>
+        <div class="form-group" style="margin:0"><label>Name *</label><input type="text" id="p-name" placeholder="z.B. Nudeln" onkeydown="if(event.key==='Enter')savePantryItem()"></div>
       </div>
       <div class="add-form-grid">
-        <div class="form-group" style="margin:0">
-          <label>Kategorie</label>
+        <div class="form-group" style="margin:0"><label>Kategorie</label>
           <select id="p-category">
             <option value="Gemüse & Obst">🥦 Gemüse & Obst</option>
             <option value="Fleisch & Fisch">🥩 Fleisch & Fisch</option>
@@ -1324,22 +1396,21 @@ hr { border: none; border-top: 1px solid var(--border); margin: 16px 0; }
             <option value="Sonstiges">📦 Sonstiges</option>
           </select>
         </div>
-        <div class="form-group" style="margin:0">
-          <label>Menge</label>
-          <input type="number" id="p-amount" placeholder="500" min="0" step="0.1">
-        </div>
-        <div class="form-group" style="margin:0">
-          <label>Einheit</label>
-          <input type="text" id="p-unit" placeholder="g">
-        </div>
+        <div class="form-group" style="margin:0"><label>Menge</label><input type="number" id="p-amount" placeholder="500" min="0" step="0.1"></div>
+        <div class="form-group" style="margin:0"><label>Einheit</label><input type="text" id="p-unit" placeholder="g"></div>
       </div>
-      <div class="form-group">
-        <label>Status</label>
+      <div class="form-group"><label>Status</label>
         <select id="p-status">
           <option value="ok">✅ Vorhanden</option>
           <option value="low">⚠️ Wenig</option>
           <option value="critical">🔴 Fast leer</option>
         </select>
+      </div>
+      <div class="form-group">
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+          <input type="checkbox" id="p-staple" style="width:16px;height:16px;accent-color:var(--green)">
+          <span>⭐ Zur Stammliste hinzufügen</span>
+        </label>
       </div>
       <div style="display:flex;gap:10px">
         <button class="btn btn-secondary" onclick="toggleAddPantryForm()">Abbrechen</button>
@@ -1347,14 +1418,35 @@ hr { border: none; border-top: 1px solid var(--border); margin: 16px 0; }
       </div>
     </div>
 
-    <div class="pantry-search">
-      <svg class="search-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z"/></svg>
-      <input type="text" placeholder="Vorrat durchsuchen…" oninput="filterPantry(this.value)">
+    <!-- STOCK TAB -->
+    <div id="pantry-tab-stock">
+      <div class="pantry-search">
+        <svg class="search-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z"/></svg>
+        <input type="text" placeholder="Vorrat durchsuchen…" oninput="filterPantry(this.value)">
+      </div>
+      <div class="pantry-categories" id="pantry-cat-filters"></div>
+      <div id="pantry-list"><div class="loading"><div class="spinner"></div>Lade Vorräte…</div></div>
     </div>
 
-    <div class="pantry-categories" id="pantry-cat-filters"></div>
-    <div class="pantry-list" id="pantry-list">
-      <div class="loading"><div class="spinner"></div>Lade Vorräte…</div>
+    <!-- STAPLES TAB -->
+    <div id="pantry-tab-staples" class="hidden">
+      <p style="font-size:14px;color:var(--text2);margin-bottom:16px">Dinge die immer vorhanden sein sollen. Wenn sie aufgebraucht sind, wirst du benachrichtigt.</p>
+      <div id="staples-alerts"></div>
+      <div id="staples-list"></div>
+      <button class="add-row-btn" style="margin-top:8px" onclick="toggleAddPantryForm();switchPantryTab('stock');document.getElementById('p-staple').checked=true">+ Zur Stammliste hinzufügen</button>
+    </div>
+
+    <!-- COOK TAB -->
+    <div id="pantry-tab-cook" class="hidden">
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:16px">
+        <div style="font-weight:700;margin-bottom:4px">🍳 Kochmodus</div>
+        <p style="font-size:13px;color:var(--text2)">Hake Zutaten ab die du beim Kochen verbrauchst. Abgehakte Zutaten werden aus dem Vorrat entfernt.</p>
+      </div>
+      <div id="cook-list"></div>
+      <div id="cook-actions" class="hidden" style="margin-top:16px;display:flex;gap:10px">
+        <button class="btn btn-secondary" onclick="clearCookChecked(false)">Abbrechen</button>
+        <button class="btn btn-red" onclick="clearCookChecked(true)" style="flex:1">🗑 Abgehakte entfernen</button>
+      </div>
     </div>
   </div>
 
@@ -2399,6 +2491,7 @@ window.selectPantryIngredient=(ing)=>{
 window.savePantryItem=async()=>{
   const name=sanitize(document.getElementById('p-name').value.trim());
   if(!name) return;
+  const isStaple = document.getElementById('p-staple').checked;
   const item={
     name,
     emoji:document.getElementById('p-emoji').value||'📦',
@@ -2406,6 +2499,7 @@ window.savePantryItem=async()=>{
     amount:parseFloat(document.getElementById('p-amount').value)||null,
     unit:document.getElementById('p-unit').value.trim()||null,
     status:document.getElementById('p-status').value,
+    staple: isStaple,
     addedAt:Date.now()
   };
   if(isDemoMode){ const key='p'+Date.now(); pantry[key]=item; renderPantry(); renderHome(); renderRecipes(); }
@@ -2415,6 +2509,8 @@ window.savePantryItem=async()=>{
   document.getElementById('p-amount').value='';
   document.getElementById('p-unit').value='';
   document.getElementById('p-status').value='ok';
+  document.getElementById('p-staple').checked=false;
+  document.getElementById('p-search').value='';
   document.getElementById('p-name').focus();
 };
 
@@ -2425,12 +2521,25 @@ window.deletePantryItem=async(id)=>{
 
 window.filterPantry=(q)=>renderPantry(q);
 
+// ─── PANTRY TABS ───
+let activePantryTab = 'stock';
+
+window.switchPantryTab=(tab)=>{
+  activePantryTab = tab;
+  ['stock','staples','cook'].forEach(t=>{
+    document.getElementById(`pantry-tab-${t}`).classList.toggle('hidden', t!==tab);
+    document.getElementById(`ptab-${t}`).classList.toggle('active', t===tab);
+  });
+  if(tab==='staples') renderStaples();
+  if(tab==='cook') renderCookMode();
+};
+
+// ─── RENDER PANTRY (grouped by category) ───
 function renderPantry(search=''){
   const list=document.getElementById('pantry-list');
   const cats=new Set(['Alle']);
   Object.values(pantry).forEach(p=>p.category&&cats.add(p.category));
 
-  // Filter chips
   const cf=document.getElementById('pantry-cat-filters');
   cf.innerHTML='';
   cats.forEach(c=>{
@@ -2444,7 +2553,6 @@ function renderPantry(search=''){
   if(activePantryCategory!=='Alle') items=items.filter(([,p])=>p.category===activePantryCategory);
   if(search){ const s=search.toLowerCase(); items=items.filter(([,p])=>p.name?.toLowerCase().includes(s)); }
 
-  // Count badge
   const total=Object.keys(pantry).length;
   document.getElementById('pantry-count-badge').textContent=`${total} Vorräte`;
   document.getElementById('hc-pantry').textContent=total;
@@ -2454,22 +2562,200 @@ function renderPantry(search=''){
     return;
   }
 
-  list.innerHTML='';
+  // Group by category
+  const groups={};
   items.forEach(([id,p])=>{
-    const div=document.createElement('div');
-    div.className='pantry-item';
-    div.innerHTML=`
-      <div class="pantry-item-emoji">${p.emoji||'📦'}</div>
-      <div class="pantry-item-info">
-        <div class="pantry-item-name">${p.name}</div>
-        <div class="pantry-item-amount">${p.amount?p.amount+' '+(p.unit||''):''}${p.category?' · '+p.category:''}</div>
-      </div>
-      <div class="status-dot status-${p.status||'ok'}"></div>
-      <div class="pantry-item-actions">
-        <button class="icon-btn delete" onclick="deletePantryItem('${id}')">×</button>
-      </div>`;
-    list.appendChild(div);
+    const cat=p.category||'Sonstiges';
+    if(!groups[cat]) groups[cat]=[];
+    groups[cat].push([id,p]);
   });
+
+  list.innerHTML='';
+  Object.entries(groups).forEach(([cat,entries])=>{
+    const section=document.createElement('div');
+    section.style.cssText='margin-bottom:16px';
+    section.innerHTML=`<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text2);margin-bottom:8px;display:flex;align-items:center;gap:6px">${CAT_ICONS[cat]||'📦'} ${cat} <span style="background:var(--surface2);color:var(--text2);padding:1px 7px;border-radius:10px;font-size:10px">${entries.length}</span></div>`;
+    entries.forEach(([id,p])=>{
+      const div=document.createElement('div');
+      div.className='pantry-item';
+      div.innerHTML=`
+        <div class="pantry-item-emoji">${p.emoji||'📦'}</div>
+        <div class="pantry-item-info">
+          <div class="pantry-item-name">${p.name}${p.staple?' <span style="font-size:10px;color:var(--orange)">⭐</span>':''}</div>
+          <div class="pantry-item-amount">${p.amount?p.amount+' '+(p.unit||''):''}${p.amount&&p.category?' · ':''}${p.category||''}</div>
+        </div>
+        <div class="status-dot status-${p.status||'ok'}"></div>
+        <div class="pantry-item-actions">
+          <button class="icon-btn delete" onclick="deletePantryItem('${id}')">×</button>
+        </div>`;
+      section.appendChild(div);
+    });
+    list.appendChild(section);
+  });
+
+  // Also refresh staples alert if on staples tab
+  if(activePantryTab==='staples') renderStaples();
+}
+
+// ─── STAPLES ───
+function renderStaples(){
+  const stapleItems = Object.entries(pantry).filter(([,p])=>p.staple);
+  const stapleList = document.getElementById('staples-list');
+  const alerts = document.getElementById('staples-alerts');
+
+  // Missing staples = staple items but NOT currently in pantry with ok status
+  const missing = stapleItems.filter(([,p])=>p.status==='critical'||p.status==='low');
+  const ok = stapleItems.filter(([,p])=>p.status==='ok');
+
+  // Alerts for missing/low staples
+  alerts.innerHTML='';
+  if(missing.length>0){
+    missing.forEach(([id,p])=>{
+      const div=document.createElement('div');
+      div.className='staple-alert';
+      div.innerHTML=`
+        <span class="alert-icon">${p.emoji||'📦'}</span>
+        <div class="alert-info">
+          <div class="alert-name">${p.name} ${p.status==='critical'?'– Fast aufgebraucht!':'– Wird knapp'}</div>
+          <div class="alert-desc">${p.amount?p.amount+' '+(p.unit||'')+' verbleibend':''}</div>
+        </div>
+        <button class="alert-btn" onclick="addStapleToShop('${id}')">🛒 Kaufen</button>
+      `;
+      alerts.appendChild(div);
+    });
+  }
+
+  if(stapleItems.length===0){
+    stapleList.innerHTML=`<div class="empty-state"><div class="ei">⭐</div><h3>Noch keine Stammliste</h3><p>Füge Zutaten hinzu und markiere sie als Stammliste – z.B. Olivenöl, Salz, Nudeln.</p></div>`;
+    return;
+  }
+
+  stapleList.innerHTML='';
+  if(ok.length>0){
+    const header=document.createElement('div');
+    header.style.cssText='font-size:12px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;margin-top:'+(missing.length>0?'16px':'0');
+    header.textContent='✅ Vorhanden';
+    stapleList.appendChild(header);
+    ok.forEach(([id,p])=>{
+      const div=document.createElement('div');
+      div.className='staple-item';
+      div.innerHTML=`
+        <span class="star">⭐</span>
+        <span style="font-size:22px">${p.emoji||'📦'}</span>
+        <div style="flex:1">
+          <div style="font-weight:600">${p.name}</div>
+          <div style="font-size:12px;color:var(--text2)">${p.amount?p.amount+' '+(p.unit||''):''}${p.category?' · '+p.category:''}</div>
+        </div>
+        <button class="icon-btn delete" onclick="deletePantryItem('${id}')">×</button>
+      `;
+      stapleList.appendChild(div);
+    });
+  }
+}
+
+window.addStapleToShop=async(id)=>{
+  const item=pantry[id]; if(!item) return;
+  const key='staple_'+item.name.toLowerCase().replace(/[^a-z0-9äöüß]/g,'_');
+  const shopItem={ name:item.name, amount:item.amount||null, unit:item.unit||'', category:item.category||'Sonstiges', from:'Stammliste', checked:false };
+  if(isDemoMode){ shoppingList[key]=shopItem; renderShopping(); }
+  else await update(ref(db,`families/${familyId}/shoppingList`),{[key]:shopItem});
+  showPantryToast(1);
+  // Remove alert visually
+  renderStaples();
+};
+
+// ─── COOK MODE ───
+let cookChecked = new Set();
+
+function renderCookMode(){
+  const list=document.getElementById('cook-list');
+  const actions=document.getElementById('cook-actions');
+  const items=Object.entries(pantry);
+
+  cookChecked = new Set(); // reset on open
+  actions.classList.add('hidden');
+
+  if(items.length===0){
+    list.innerHTML=`<div class="empty-state"><div class="ei">🍳</div><h3>Kein Vorrat vorhanden</h3><p>Füge zuerst Zutaten zum Vorrat hinzu.</p></div>`;
+    return;
+  }
+
+  // Group by category
+  const groups={};
+  items.forEach(([id,p])=>{
+    const cat=p.category||'Sonstiges';
+    if(!groups[cat]) groups[cat]=[];
+    groups[cat].push([id,p]);
+  });
+
+  list.innerHTML='';
+  Object.entries(groups).forEach(([cat,entries])=>{
+    const header=document.createElement('div');
+    header.style.cssText='font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text2);margin-bottom:6px;margin-top:14px;display:flex;align-items:center;gap:6px';
+    header.innerHTML=`${CAT_ICONS[cat]||'📦'} ${cat}`;
+    list.appendChild(header);
+
+    entries.forEach(([id,p])=>{
+      const div=document.createElement('div');
+      div.className='cook-item';
+      div.id=`cook-${id}`;
+      div.innerHTML=`
+        <div class="checkbox" id="cook-cb-${id}"></div>
+        <span style="font-size:22px">${p.emoji||'📦'}</span>
+        <div style="flex:1">
+          <div class="cook-name" style="font-weight:600">${p.name}</div>
+          <div style="font-size:12px;color:var(--text2)">${p.amount?p.amount+' '+(p.unit||''):'Menge nicht angegeben'}</div>
+        </div>
+      `;
+      div.onclick=()=>toggleCookItem(id);
+      list.appendChild(div);
+    });
+  });
+}
+
+function toggleCookItem(id){
+  const div=document.getElementById(`cook-${id}`);
+  const cb=document.getElementById(`cook-cb-${id}`);
+  if(cookChecked.has(id)){
+    cookChecked.delete(id);
+    div.classList.remove('cooked');
+    cb.innerHTML='';
+    cb.style.background='';
+    cb.style.borderColor='';
+  } else {
+    cookChecked.add(id);
+    div.classList.add('cooked');
+    cb.innerHTML=`<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg>`;
+    cb.style.background='var(--red)';
+    cb.style.borderColor='var(--red)';
+  }
+  document.getElementById('cook-actions').classList.toggle('hidden', cookChecked.size===0);
+}
+
+window.clearCookChecked=async(doRemove)=>{
+  if(!doRemove){ cookChecked.clear(); renderCookMode(); return; }
+  if(cookChecked.size===0) return;
+  const count=cookChecked.size;
+  if(isDemoMode){
+    cookChecked.forEach(id=>delete pantry[id]);
+    renderPantry(); renderHome(); renderRecipes();
+  } else {
+    await Promise.all([...cookChecked].map(id=>remove(ref(db,`families/${familyId}/pantry/${id}`))));
+  }
+  cookChecked.clear();
+  renderCookMode();
+  showPantryToast2(count);
+};
+
+function showPantryToast2(count){
+  const existing=document.getElementById('pantry-toast');
+  if(existing) existing.remove();
+  const toast=document.createElement('div');
+  toast.id='pantry-toast';
+  toast.style.cssText=`position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:var(--red);color:white;padding:12px 20px;border-radius:12px;font-size:14px;font-weight:600;box-shadow:0 4px 20px rgba(232,93,79,0.4);z-index:300;white-space:nowrap;animation:slideUp 0.3s ease`;
+  toast.textContent=`🍳 ${count} Zutat${count===1?'':'en'} als verbraucht entfernt`;
+  document.body.appendChild(toast);
+  setTimeout(()=>{ toast.style.opacity='0'; toast.style.transition='opacity 0.4s'; setTimeout(()=>toast.remove(),400); },3000);
 }
 
 // ─── RECIPES ───
