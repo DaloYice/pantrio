@@ -1421,12 +1421,6 @@ hr { border: none; border-top: 1px solid var(--border); margin: 16px 0; }
           <option value="critical">🔴 Fast leer</option>
         </select>
       </div>
-      <div class="form-group">
-        <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
-          <input type="checkbox" id="p-staple" style="width:16px;height:16px;accent-color:var(--green)">
-          <span>⭐ Zur Stammliste hinzufügen</span>
-        </label>
-      </div>
       <div style="display:flex;gap:10px">
         <button class="btn btn-secondary" onclick="toggleAddPantryForm()">Abbrechen</button>
         <button class="btn btn-primary" onclick="savePantryItem()" style="flex:1">Speichern</button>
@@ -1445,10 +1439,46 @@ hr { border: none; border-top: 1px solid var(--border); margin: 16px 0; }
 
     <!-- STAPLES TAB -->
     <div id="pantry-tab-staples" class="hidden">
-      <p style="font-size:14px;color:var(--text2);margin-bottom:16px">Dinge die immer vorhanden sein sollen. Wenn sie aufgebraucht sind, wirst du benachrichtigt.</p>
-      <div id="staples-alerts"></div>
+      <div style="background:linear-gradient(135deg,#fef9e7,#fff3cd);border:1px solid #fcd34d;border-radius:var(--radius);padding:16px;margin-bottom:16px">
+        <div style="font-weight:700;font-size:15px;margin-bottom:4px">⭐ Was ist die Stammliste?</div>
+        <p style="font-size:13px;color:#92400e;line-height:1.5">Trage hier ein, was du immer zuhause haben möchtest. Sobald du einen Artikel aus dem Vorrat entfernst, prüft Pantrio ob er auf der Stammliste steht – und fügt ihn automatisch zum Einkaufskorb hinzu.</p>
+      </div>
+
+      <!-- Add staple form -->
+      <div id="add-staple-form" class="hidden" style="background:var(--surface);border:2px solid var(--orange);border-radius:var(--radius);padding:18px;margin-bottom:14px">
+        <div style="font-weight:700;color:#92400e;margin-bottom:12px">Artikel zur Stammliste</div>
+        <div class="add-form-grid2" style="margin-bottom:10px">
+          <div class="form-group" style="margin:0"><label>Emoji</label><input type="text" id="st-emoji" placeholder="🧴" maxlength="4"></div>
+          <div class="form-group" style="margin:0"><label>Name *</label><input type="text" id="st-name" placeholder="z.B. Olivenöl" onkeydown="if(event.key==='Enter')saveStaple()"></div>
+        </div>
+        <div class="add-form-grid" style="margin-bottom:10px">
+          <div class="form-group" style="margin:0"><label>Kategorie</label>
+            <select id="st-category">
+              <option value="Gemüse & Obst">🥦 Gemüse & Obst</option>
+              <option value="Fleisch & Fisch">🥩 Fleisch & Fisch</option>
+              <option value="Milchprodukte">🧀 Milchprodukte</option>
+              <option value="Trockenwaren" selected>🌾 Trockenwaren</option>
+              <option value="Konserven">🥫 Konserven</option>
+              <option value="Gewürze">🧂 Gewürze</option>
+              <option value="Getränke">🥤 Getränke</option>
+              <option value="Sonstiges">📦 Sonstiges</option>
+            </select>
+          </div>
+          <div class="form-group" style="margin:0"><label>Menge</label><input type="number" id="st-amount" placeholder="500" min="0" step="0.1"></div>
+          <div class="form-group" style="margin:0"><label>Einheit</label><input type="text" id="st-unit" placeholder="g"></div>
+        </div>
+        <div style="display:flex;gap:10px">
+          <button class="btn btn-secondary" onclick="toggleStapleForm()">Abbrechen</button>
+          <button class="btn" onclick="saveStaple()" style="flex:1;background:var(--orange);color:white">Speichern</button>
+        </div>
+      </div>
+
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+        <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text2)" id="staples-count-label">0 Artikel</div>
+        <button class="btn btn-secondary btn-sm" onclick="toggleStapleForm()">+ Hinzufügen</button>
+      </div>
+
       <div id="staples-list"></div>
-      <button class="add-row-btn" style="margin-top:8px" onclick="toggleAddPantryForm();switchPantryTab('stock');document.getElementById('p-staple').checked=true">+ Zur Stammliste hinzufügen</button>
     </div>
 
     <!-- COOK TAB -->
@@ -1817,6 +1847,7 @@ let pantry = {};
 let recipes = {};
 let shoppingList = {};
 let weekPlan = {};
+let staples = {}; // independent staples list
 let editingRecipeId = null;
 let activePantryCategory = 'Alle';
 let activeRecipeFilter = 'Alle';
@@ -2387,7 +2418,7 @@ function loadApp(){
     });
   }
 
-  listenFamily(); listenPantry(); listenRecipes(); listenShopping(); listenWeekPlan();
+  listenFamily(); listenPantry(); listenRecipes(); listenShopping(); listenWeekPlan(); listenStaples();
   buildWeekGrid();
 }
 
@@ -2608,7 +2639,6 @@ window.selectPantryIngredient=(ing)=>{
 window.savePantryItem=async()=>{
   const name=sanitize(document.getElementById('p-name').value.trim());
   if(!name) return;
-  const isStaple = document.getElementById('p-staple').checked;
   const item={
     name,
     emoji:document.getElementById('p-emoji').value||'📦',
@@ -2616,7 +2646,6 @@ window.savePantryItem=async()=>{
     amount:parseFloat(document.getElementById('p-amount').value)||null,
     unit:document.getElementById('p-unit').value.trim()||null,
     status:document.getElementById('p-status').value,
-    staple: isStaple,
     addedAt:Date.now()
   };
   if(isDemoMode){ const key='p'+Date.now(); pantry[key]=item; renderPantry(); renderHome(); renderRecipes(); }
@@ -2626,15 +2655,39 @@ window.savePantryItem=async()=>{
   document.getElementById('p-amount').value='';
   document.getElementById('p-unit').value='';
   document.getElementById('p-status').value='ok';
-  document.getElementById('p-staple').checked=false;
   document.getElementById('p-search').value='';
   document.getElementById('p-name').focus();
 };
 
 window.deletePantryItem=async(id)=>{
+  const item = pantry[id];
+  if(item) checkAndAddToShoppingFromStaples(item.name);
   if(isDemoMode){ delete pantry[id]; renderPantry(); renderHome(); renderRecipes(); return; }
   await remove(ref(db,`families/${familyId}/pantry/${id}`));
 };
+
+// Check if removed pantry item is on staples list → add to shopping
+function checkAndAddToShoppingFromStaples(name){
+  const match = Object.values(staples).find(s=>s.name.toLowerCase().trim()===name.toLowerCase().trim());
+  if(!match) return;
+  const key = 'staple_' + name.toLowerCase().replace(/[^a-z0-9äöüß]/g,'_');
+  // Don't add if already on shopping list
+  const alreadyThere = Object.values(shoppingList).some(i=>i.name.toLowerCase().trim()===name.toLowerCase().trim()&&!i.checked);
+  if(alreadyThere) return;
+  const shopItem = { name:match.name, amount:match.amount||null, unit:match.unit||'', category:match.category||'Sonstiges', from:'⭐ Stammliste', checked:false };
+  if(isDemoMode){
+    shoppingList[key] = shopItem;
+    renderShopping();
+  } else {
+    update(ref(db,`families/${familyId}/shoppingList`),{[key]:shopItem});
+  }
+  // Show toast
+  const toast=document.createElement('div');
+  toast.style.cssText=`position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:#92400e;color:white;padding:12px 20px;border-radius:12px;font-size:14px;font-weight:600;box-shadow:0 4px 20px rgba(0,0,0,0.2);z-index:300;white-space:nowrap;animation:slideUp 0.3s ease`;
+  toast.textContent=`⭐ ${match.name} zur Einkaufsliste hinzugefügt`;
+  document.body.appendChild(toast);
+  setTimeout(()=>{ toast.style.opacity='0'; toast.style.transition='opacity 0.4s'; setTimeout(()=>toast.remove(),400); },3000);
+}
 
 window.filterPantry=(q)=>renderPantry(q);
 
@@ -2698,7 +2751,7 @@ function renderPantry(search=''){
       div.innerHTML=`
         <div class="pantry-item-emoji">${p.emoji||'📦'}</div>
         <div class="pantry-item-info">
-          <div class="pantry-item-name">${p.name}${p.staple?' <span style="font-size:10px;color:var(--orange)">⭐</span>':''}</div>
+          <div class="pantry-item-name">${p.name}</div>
           <div class="pantry-item-amount">${p.amount?p.amount+' '+(p.unit||''):''}${p.amount&&p.category?' · ':''}${p.category||''}</div>
         </div>
         <div class="status-dot status-${p.status||'ok'}"></div>
@@ -2709,75 +2762,115 @@ function renderPantry(search=''){
     });
     list.appendChild(section);
   });
-
-  // Also refresh staples alert if on staples tab
-  if(activePantryTab==='staples') renderStaples();
 }
 
 // ─── STAPLES ───
-function renderStaples(){
-  const stapleItems = Object.entries(pantry).filter(([,p])=>p.staple);
-  const stapleList = document.getElementById('staples-list');
-  const alerts = document.getElementById('staples-alerts');
+function listenStaples(){
+  if(isDemoMode) return;
+  onValue(ref(db,`families/${familyId}/staples`),snap=>{
+    staples = snap.val()||{};
+    if(activePantryTab==='staples') renderStaples();
+  });
+}
 
-  // Missing staples = staple items but NOT currently in pantry with ok status
-  const missing = stapleItems.filter(([,p])=>p.status==='critical'||p.status==='low');
-  const ok = stapleItems.filter(([,p])=>p.status==='ok');
-
-  // Alerts for missing/low staples
-  alerts.innerHTML='';
-  if(missing.length>0){
-    missing.forEach(([id,p])=>{
-      const div=document.createElement('div');
-      div.className='staple-alert';
-      div.innerHTML=`
-        <span class="alert-icon">${p.emoji||'📦'}</span>
-        <div class="alert-info">
-          <div class="alert-name">${p.name} ${p.status==='critical'?'– Fast aufgebraucht!':'– Wird knapp'}</div>
-          <div class="alert-desc">${p.amount?p.amount+' '+(p.unit||'')+' verbleibend':''}</div>
-        </div>
-        <button class="alert-btn" onclick="addStapleToShop('${id}')">🛒 Kaufen</button>
-      `;
-      alerts.appendChild(div);
-    });
+window.toggleStapleForm=()=>{
+  const f=document.getElementById('add-staple-form');
+  f.classList.toggle('hidden');
+  if(!f.classList.contains('hidden')){
+    document.getElementById('st-name').value='';
+    document.getElementById('st-emoji').value='';
+    document.getElementById('st-amount').value='';
+    document.getElementById('st-unit').value='';
+    document.getElementById('st-name').focus();
   }
+};
 
-  if(stapleItems.length===0){
-    stapleList.innerHTML=`<div class="empty-state"><div class="ei">⭐</div><h3>Noch keine Stammliste</h3><p>Füge Zutaten hinzu und markiere sie als Stammliste – z.B. Olivenöl, Salz, Nudeln.</p></div>`;
+window.saveStaple=async()=>{
+  const name=sanitize(document.getElementById('st-name').value.trim());
+  if(!name) return;
+  const item={
+    name,
+    emoji:document.getElementById('st-emoji').value||'📦',
+    category:document.getElementById('st-category').value,
+    amount:parseFloat(document.getElementById('st-amount').value)||null,
+    unit:document.getElementById('st-unit').value.trim()||null,
+    addedAt:Date.now()
+  };
+  if(isDemoMode){
+    staples['st'+Date.now()]=item;
+    renderStaples();
+  } else {
+    await push(ref(db,`families/${familyId}/staples`),item);
+  }
+  toggleStapleForm();
+};
+
+window.deleteStaple=async(id)=>{
+  if(isDemoMode){ delete staples[id]; renderStaples(); return; }
+  await remove(ref(db,`families/${familyId}/staples/${id}`));
+};
+
+function renderStaples(){
+  const list=document.getElementById('staples-list');
+  const countLabel=document.getElementById('staples-count-label');
+  const entries=Object.entries(staples);
+  if(countLabel) countLabel.textContent=`${entries.length} Artikel`;
+
+  if(entries.length===0){
+    list.innerHTML=`<div class="empty-state"><div class="ei">⭐</div><h3>Stammliste ist leer</h3><p>Füge Artikel hinzu die du immer zuhause haben möchtest – z.B. Olivenöl, Salz, Nudeln.</p></div>`;
     return;
   }
 
-  stapleList.innerHTML='';
-  if(ok.length>0){
+  // Group by category
+  const groups={};
+  entries.forEach(([id,s])=>{
+    const cat=s.category||'Sonstiges';
+    if(!groups[cat]) groups[cat]=[];
+    groups[cat].push([id,s]);
+  });
+
+  list.innerHTML='';
+  Object.entries(groups).forEach(([cat,items])=>{
     const header=document.createElement('div');
-    header.style.cssText='font-size:12px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;margin-top:'+(missing.length>0?'16px':'0');
-    header.textContent='✅ Vorhanden';
-    stapleList.appendChild(header);
-    ok.forEach(([id,p])=>{
+    header.style.cssText='font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text2);margin-bottom:8px;margin-top:14px;display:flex;align-items:center;gap:6px';
+    header.innerHTML=`${CAT_ICONS[cat]||'📦'} ${cat} <span style="background:var(--surface2);color:var(--text2);padding:1px 7px;border-radius:10px;font-size:10px">${items.length}</span>`;
+    list.appendChild(header);
+    items.forEach(([id,s])=>{
+      // Check if currently in pantry
+      const inPantry=Object.values(pantry).some(p=>p.name.toLowerCase().trim()===s.name.toLowerCase().trim());
       const div=document.createElement('div');
       div.className='staple-item';
       div.innerHTML=`
         <span class="star">⭐</span>
-        <span style="font-size:22px">${p.emoji||'📦'}</span>
+        <span style="font-size:22px">${s.emoji||'📦'}</span>
         <div style="flex:1">
-          <div style="font-weight:600">${p.name}</div>
-          <div style="font-size:12px;color:var(--text2)">${p.amount?p.amount+' '+(p.unit||''):''}${p.category?' · '+p.category:''}</div>
+          <div style="font-weight:600;display:flex;align-items:center;gap:6px">
+            ${s.name}
+            <span style="font-size:10px;padding:2px 7px;border-radius:10px;font-weight:700;background:${inPantry?'var(--green-light)':'var(--red-light)'};color:${inPantry?'var(--green)':'var(--red)'}">
+              ${inPantry?'✓ Im Vorrat':'✗ Fehlt'}
+            </span>
+          </div>
+          <div style="font-size:12px;color:var(--text2)">${s.amount?s.amount+' '+(s.unit||''):''}${s.amount&&s.category?' · ':''}${s.category||''}</div>
         </div>
-        <button class="icon-btn delete" onclick="deletePantryItem('${id}')">×</button>
+        <div style="display:flex;gap:6px">
+          ${!inPantry?`<button class="icon-btn" onclick="addStapleToShopManual('${id}')" title="Zur Einkaufsliste" style="color:var(--green)">🛒</button>`:''}
+          <button class="icon-btn delete" onclick="deleteStaple('${id}')">×</button>
+        </div>
       `;
-      stapleList.appendChild(div);
+      list.appendChild(div);
     });
-  }
+  });
 }
 
-window.addStapleToShop=async(id)=>{
-  const item=pantry[id]; if(!item) return;
-  const key='staple_'+item.name.toLowerCase().replace(/[^a-z0-9äöüß]/g,'_');
-  const shopItem={ name:item.name, amount:item.amount||null, unit:item.unit||'', category:item.category||'Sonstiges', from:'Stammliste', checked:false };
+window.addStapleToShopManual=async(id)=>{
+  const s=staples[id]; if(!s) return;
+  const key='staple_'+s.name.toLowerCase().replace(/[^a-z0-9äöüß]/g,'_');
+  const alreadyThere=Object.values(shoppingList).some(i=>i.name.toLowerCase().trim()===s.name.toLowerCase().trim()&&!i.checked);
+  if(alreadyThere){ showPantryToast2(0); return; }
+  const shopItem={ name:s.name, amount:s.amount||null, unit:s.unit||'', category:s.category||'Sonstiges', from:'⭐ Stammliste', checked:false };
   if(isDemoMode){ shoppingList[key]=shopItem; renderShopping(); }
   else await update(ref(db,`families/${familyId}/shoppingList`),{[key]:shopItem});
   showPantryToast(1);
-  // Remove alert visually
   renderStaples();
 };
 
@@ -2853,6 +2946,8 @@ window.clearCookChecked=async(doRemove)=>{
   if(!doRemove){ cookChecked.clear(); renderCookMode(); return; }
   if(cookChecked.size===0) return;
   const count=cookChecked.size;
+  // Check staples for each removed item
+  cookChecked.forEach(id=>{ const item=pantry[id]; if(item) checkAndAddToShoppingFromStaples(item.name); });
   if(isDemoMode){
     cookChecked.forEach(id=>delete pantry[id]);
     renderPantry(); renderHome(); renderRecipes();
