@@ -1787,6 +1787,68 @@ window.showFamilyChoice=()=>{ document.getElementById('family-choice').classList
 
 function famErr(m){ const e=document.getElementById('family-error'); e.textContent=m; e.classList.remove('hidden'); }
 
+// ─── STARTER RECIPES ───
+const STARTER_RECIPES = [
+  { name:'Tomatenpasta', emoji:'🍝', category:'Hauptgericht', portions:4, prepTime:20, difficulty:'Einfach',
+    description:'Ein schneller Klassiker für die ganze Familie – in 20 Minuten auf dem Tisch.',
+    ingredients:[{name:'Nudeln',amount:400,unit:'g'},{name:'Tomaten',amount:4,unit:'Stück'},{name:'Knoblauch',amount:2,unit:'Zehen'},{name:'Olivenöl',amount:3,unit:'EL'},{name:'Parmesan',amount:50,unit:'g'},{name:'Salz',amount:1,unit:'Prise'}],
+    steps:['Nudeln in Salzwasser al dente kochen.','Knoblauch fein hacken, in Olivenöl goldbraun anbraten.','Tomaten würfeln, dazugeben und 10 Min. köcheln lassen.','Nudeln abgießen, mit der Sauce mischen und mit Parmesan servieren.']
+  },
+  { name:'Rührei mit Toast', emoji:'🍳', category:'Frühstück', portions:2, prepTime:10, difficulty:'Einfach',
+    description:'Das perfekte schnelle Frühstück – cremig, warm, sättigend.',
+    ingredients:[{name:'Eier',amount:4,unit:'Stück'},{name:'Butter',amount:1,unit:'EL'},{name:'Milch',amount:2,unit:'EL'},{name:'Toastbrot',amount:4,unit:'Scheiben'},{name:'Salz',amount:1,unit:'Prise'},{name:'Pfeffer',amount:1,unit:'Prise'}],
+    steps:['Eier mit Milch, Salz und Pfeffer verquirlen.','Butter in der Pfanne bei mittlerer Hitze schmelzen.','Eimasse hineingeben und langsam stocken lassen, dabei rühren.','Mit getoastetem Brot servieren.']
+  },
+  { name:'Gemüsesuppe', emoji:'🥣', category:'Hauptgericht', portions:4, prepTime:35, difficulty:'Einfach',
+    description:'Wärmende Suppe aus saisonalem Gemüse – perfekt für jeden Tag.',
+    ingredients:[{name:'Karotten',amount:3,unit:'Stück'},{name:'Kartoffeln',amount:3,unit:'Stück'},{name:'Zwiebeln',amount:1,unit:'Stück'},{name:'Sellerie',amount:2,unit:'Stangen'},{name:'Gemüsebrühe',amount:1,unit:'Liter'},{name:'Olivenöl',amount:2,unit:'EL'},{name:'Petersilie',amount:1,unit:'Bund'}],
+    steps:['Gemüse schälen und in Würfel schneiden.','Zwiebeln in Öl glasig dünsten.','Gemüse und Brühe dazugeben, 25 Min. köcheln.','Mit Petersilie garnieren und servieren.']
+  },
+  { name:'Pfannkuchen', emoji:'🥞', category:'Frühstück', portions:4, prepTime:20, difficulty:'Einfach',
+    description:'Klassische Pfannkuchen – süß oder herzhaft, immer ein Treffer.',
+    ingredients:[{name:'Mehl',amount:200,unit:'g'},{name:'Eier',amount:2,unit:'Stück'},{name:'Milch',amount:300,unit:'ml'},{name:'Butter',amount:1,unit:'EL'},{name:'Salz',amount:1,unit:'Prise'},{name:'Zucker',amount:1,unit:'EL'}],
+    steps:['Mehl, Eier, Milch, Zucker und Salz zu einem glatten Teig verrühren.','30 Min. ruhen lassen.','Butter in Pfanne erhitzen, Teig portionsweise hineingeben.','Goldbraun backen, wenden, fertigbacken.']
+  },
+  { name:'Hähnchen-Reis-Pfanne', emoji:'🍗', category:'Hauptgericht', portions:4, prepTime:30, difficulty:'Mittel',
+    description:'Proteinreich, sättigend und schnell – ein Wochenabend-Favorit.',
+    ingredients:[{name:'Hähnchenbrust',amount:500,unit:'g'},{name:'Reis',amount:300,unit:'g'},{name:'Paprika',amount:2,unit:'Stück'},{name:'Zwiebeln',amount:1,unit:'Stück'},{name:'Knoblauch',amount:2,unit:'Zehen'},{name:'Olivenöl',amount:2,unit:'EL'},{name:'Paprikapulver',amount:1,unit:'TL'}],
+    steps:['Reis nach Packungsanweisung kochen.','Hähnchen in Stücke schneiden, würzen und anbraten.','Gemüse würfeln, zum Hähnchen geben und mitbraten.','Reis untermengen, alles kurz zusammen schwenken.']
+  },
+  { name:'Bananenmilch-Smoothie', emoji:'🍌', category:'Frühstück', portions:2, prepTime:5, difficulty:'Einfach',
+    description:'Cremiger Energie-Smoothie für den perfekten Start in den Tag.',
+    ingredients:[{name:'Bananen',amount:2,unit:'Stück'},{name:'Milch',amount:300,unit:'ml'},{name:'Joghurt',amount:100,unit:'g'},{name:'Honig',amount:1,unit:'EL'}],
+    steps:['Alle Zutaten in einen Mixer geben.','30 Sekunden auf höchster Stufe mixen.','In Gläser füllen und sofort servieren.']
+  },
+  { name:'Spaghetti Carbonara', emoji:'🍝', category:'Hauptgericht', portions:4, prepTime:25, difficulty:'Mittel',
+    description:'Das Original aus Rom – cremig ohne Sahne, nur mit Ei und Käse.',
+    ingredients:[{name:'Spaghetti',amount:400,unit:'g'},{name:'Speck',amount:150,unit:'g'},{name:'Eier',amount:3,unit:'Stück'},{name:'Parmesan',amount:80,unit:'g'},{name:'Knoblauch',amount:1,unit:'Zehe'},{name:'Pfeffer',amount:1,unit:'Prise'}],
+    steps:['Spaghetti in Salzwasser al dente kochen.','Speck und Knoblauch in der Pfanne kross anbraten.','Eier und Parmesan zu einer Creme verrühren.','Heiße Nudeln vom Herd nehmen, Eicreme schnell unterrühren – nicht stocken lassen!']
+  },
+  { name:'Guacamole', emoji:'🥑', category:'Snack', portions:4, prepTime:10, difficulty:'Einfach',
+    description:'Frischer Avocado-Dip – ideal zu Nachos oder als Brotaufstrich.',
+    ingredients:[{name:'Avocados',amount:2,unit:'Stück'},{name:'Limette',amount:1,unit:'Stück'},{name:'Zwiebeln',amount:0.5,unit:'Stück'},{name:'Knoblauch',amount:1,unit:'Zehe'},{name:'Salz',amount:1,unit:'Prise'},{name:'Koriander',amount:1,unit:'Prise'}],
+    steps:['Avocados halbieren, Kern entfernen, Fruchtfleisch herauslöffeln.','Mit einer Gabel grob zerdrücken.','Limettensaft, fein gehackte Zwiebel, Knoblauch und Gewürze unterrühren.','Abschmecken und sofort servieren.']
+  },
+  { name:'Overnight Oats', emoji:'🌙', category:'Frühstück', portions:1, prepTime:5, difficulty:'Einfach',
+    description:'Vorbereitung am Abend, gesundes Frühstück am Morgen – ohne Kochen.',
+    ingredients:[{name:'Haferflocken',amount:80,unit:'g'},{name:'Milch',amount:200,unit:'ml'},{name:'Joghurt',amount:100,unit:'g'},{name:'Banane',amount:1,unit:'Stück'},{name:'Honig',amount:1,unit:'EL'},{name:'Beeren',amount:50,unit:'g'}],
+    steps:['Haferflocken, Milch und Joghurt in einem Glas vermischen.','Honig einrühren.','Über Nacht im Kühlschrank quellen lassen.','Am nächsten Morgen mit Früchten toppen.']
+  },
+  { name:'Tomatensuppe', emoji:'🍅', category:'Vorspeise', portions:4, prepTime:25, difficulty:'Einfach',
+    description:'Samtig, aromatisch und wärmend – ein echter Klassiker.',
+    ingredients:[{name:'Tomaten',amount:800,unit:'g'},{name:'Zwiebeln',amount:1,unit:'Stück'},{name:'Knoblauch',amount:2,unit:'Zehen'},{name:'Gemüsebrühe',amount:400,unit:'ml'},{name:'Olivenöl',amount:2,unit:'EL'},{name:'Basilikum',amount:1,unit:'Bund'},{name:'Sahne',amount:100,unit:'ml'}],
+    steps:['Zwiebeln und Knoblauch in Öl andünsten.','Tomaten grob würfeln und dazugeben.','Brühe angießen, 15 Min. köcheln.','Pürieren, Sahne einrühren, mit Basilikum servieren.']
+  },
+];
+
+async function seedStarterRecipes(fid) {
+  const ts = Date.now();
+  for(let i=0; i<STARTER_RECIPES.length; i++){
+    const r = { ...STARTER_RECIPES[i], createdAt: ts+i, createdBy: currentUser.displayName, isStarter: true };
+    await push(ref(db,`families/${fid}/recipes`), r);
+  }
+}
+
 window.createFamily = async()=>{
   const name=document.getElementById('family-name').value.trim();
   if(!name){ famErr('Bitte einen Namen eingeben.'); return; }
@@ -1795,6 +1857,8 @@ window.createFamily = async()=>{
   await set(fr,{ name, code, createdBy:currentUser.uid, createdAt:Date.now(), members:{ [currentUser.uid]:{ name:currentUser.displayName, role:'admin', joinedAt:Date.now() } } });
   await set(ref(db,`users/${currentUser.uid}/familyId`),fr.key);
   await set(ref(db,`familyCodes/${code}`),fr.key);
+  await update(ref(db,`users/${currentUser.uid}/families`),{ [fr.key]:{ name, role:'admin' } });
+  await seedStarterRecipes(fr.key);
   familyId=fr.key; loadApp();
 };
 
@@ -1959,8 +2023,8 @@ window.createFamilyFromSwitcher = async() => {
   const fid = fr.key;
   await set(fr,{ name, code, createdBy:currentUser.uid, createdAt:Date.now(), members:{ [currentUser.uid]:{ name:currentUser.displayName, role:'admin', joinedAt:Date.now() } } });
   await set(ref(db,`familyCodes/${code}`), fid);
-  // Save to user's families list
   await update(ref(db,`users/${currentUser.uid}/families`), { [fid]:{ name, role:'admin' } });
+  await seedStarterRecipes(fid);
   await switchToFamily(fid);
   closeModal('family-switcher-modal');
 };
