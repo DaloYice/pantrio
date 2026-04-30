@@ -1,0 +1,1810 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pantrio</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #faf7f2;
+    --surface: #ffffff;
+    --surface2: #f3ede4;
+    --accent: #c8602a;
+    --accent2: #e8a87c;
+    --text: #1a1208;
+    --text2: #6b5a45;
+    --border: #e0d5c5;
+    --success: #4a7c59;
+    --shadow: 0 4px 24px rgba(26,18,8,0.08);
+    --radius: 16px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+  }
+
+  /* AUTH SCREEN */
+  #auth-screen {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #1a1208 0%, #3d2b1a 50%, #c8602a 100%);
+    padding: 20px;
+  }
+
+  .auth-card {
+    background: var(--surface);
+    border-radius: 24px;
+    padding: 48px 40px;
+    width: 100%;
+    max-width: 420px;
+    box-shadow: 0 24px 80px rgba(0,0,0,0.3);
+  }
+
+  .auth-logo {
+    text-align: center;
+    margin-bottom: 36px;
+  }
+
+  .auth-logo h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: 42px;
+    font-weight: 900;
+    color: var(--accent);
+    letter-spacing: -1px;
+  }
+
+  .auth-logo p {
+    color: var(--text2);
+    font-size: 14px;
+    margin-top: 4px;
+  }
+
+  .auth-tabs {
+    display: flex;
+    background: var(--surface2);
+    border-radius: 12px;
+    padding: 4px;
+    margin-bottom: 28px;
+  }
+
+  .auth-tab {
+    flex: 1;
+    padding: 10px;
+    border: none;
+    background: transparent;
+    border-radius: 9px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text2);
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .auth-tab.active {
+    background: var(--surface);
+    color: var(--text);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  }
+
+  .form-group {
+    margin-bottom: 16px;
+  }
+
+  .form-group label {
+    display: block;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text2);
+    margin-bottom: 6px;
+  }
+
+  .form-group input, .form-group select, .form-group textarea {
+    width: 100%;
+    padding: 12px 16px;
+    border: 2px solid var(--border);
+    border-radius: 10px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 15px;
+    color: var(--text);
+    background: var(--surface);
+    transition: border-color 0.2s;
+    outline: none;
+  }
+
+  .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+    border-color: var(--accent);
+  }
+
+  .form-group textarea {
+    resize: vertical;
+    min-height: 80px;
+  }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 13px 24px;
+    border: none;
+    border-radius: 10px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 15px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-decoration: none;
+  }
+
+  .btn-primary {
+    background: var(--accent);
+    color: white;
+    width: 100%;
+  }
+
+  .btn-primary:hover { background: #b8521e; transform: translateY(-1px); }
+
+  .btn-secondary {
+    background: var(--surface2);
+    color: var(--text);
+  }
+
+  .btn-secondary:hover { background: var(--border); }
+
+  .btn-ghost {
+    background: transparent;
+    color: var(--text2);
+    padding: 8px 12px;
+    font-size: 13px;
+  }
+
+  .btn-ghost:hover { background: var(--surface2); color: var(--text); }
+
+  .btn-danger {
+    background: #fee2e2;
+    color: #dc2626;
+  }
+  .btn-danger:hover { background: #fecaca; }
+
+  .btn-success {
+    background: var(--success);
+    color: white;
+  }
+
+  .divider {
+    text-align: center;
+    color: var(--text2);
+    font-size: 13px;
+    margin: 20px 0;
+    position: relative;
+  }
+  .divider::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: var(--border);
+  }
+  .divider span {
+    background: var(--surface);
+    padding: 0 12px;
+    position: relative;
+  }
+
+  .error-msg {
+    background: #fee2e2;
+    color: #dc2626;
+    padding: 10px 14px;
+    border-radius: 8px;
+    font-size: 13px;
+    margin-bottom: 16px;
+  }
+
+  .success-msg {
+    background: #d1fae5;
+    color: #065f46;
+    padding: 10px 14px;
+    border-radius: 8px;
+    font-size: 13px;
+    margin-bottom: 16px;
+  }
+
+  /* MAIN APP */
+  #app-screen { display: none; min-height: 100vh; }
+
+  /* TOPBAR */
+  .topbar {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 0 24px;
+    height: 64px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+  }
+
+  .topbar-logo {
+    font-family: 'Playfair Display', serif;
+    font-size: 26px;
+    font-weight: 900;
+    color: var(--accent);
+  }
+
+  .topbar-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .family-badge {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text2);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  /* NAV */
+  .bottom-nav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    display: flex;
+    z-index: 100;
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  .nav-item {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 12px 8px 10px;
+    border: none;
+    background: transparent;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--text2);
+    cursor: pointer;
+    transition: color 0.2s;
+    gap: 4px;
+  }
+
+  .nav-item svg { width: 22px; height: 22px; }
+
+  .nav-item.active { color: var(--accent); }
+
+  .nav-item.active svg { stroke: var(--accent); }
+
+  /* PAGES */
+  .page { display: none; padding: 24px 20px 90px; max-width: 700px; margin: 0 auto; }
+  .page.active { display: block; }
+
+  /* RECIPE GRID */
+  .page-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+  }
+
+  .page-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 28px;
+    font-weight: 700;
+  }
+
+  .search-bar {
+    position: relative;
+    margin-bottom: 20px;
+  }
+
+  .search-bar input {
+    width: 100%;
+    padding: 12px 16px 12px 42px;
+    border: 2px solid var(--border);
+    border-radius: 12px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 15px;
+    background: var(--surface);
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  .search-bar input:focus { border-color: var(--accent); }
+
+  .search-bar svg {
+    position: absolute;
+    left: 13px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text2);
+    width: 18px;
+    height: 18px;
+  }
+
+  .recipe-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+  }
+
+  @media (min-width: 500px) {
+    .recipe-grid { grid-template-columns: 1fr 1fr 1fr; }
+  }
+
+  .recipe-card {
+    background: var(--surface);
+    border-radius: var(--radius);
+    overflow: hidden;
+    box-shadow: var(--shadow);
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+    border: 1px solid var(--border);
+  }
+
+  .recipe-card:hover { transform: translateY(-3px); box-shadow: 0 8px 32px rgba(0,0,0,0.12); }
+
+  .recipe-card-img {
+    width: 100%;
+    aspect-ratio: 4/3;
+    object-fit: cover;
+    background: linear-gradient(135deg, var(--surface2), var(--border));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 36px;
+  }
+
+  .recipe-card-body { padding: 12px; }
+
+  .recipe-card-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 15px;
+    font-weight: 700;
+    line-height: 1.3;
+    margin-bottom: 6px;
+  }
+
+  .recipe-card-meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: var(--text2);
+  }
+
+  .tag {
+    background: var(--surface2);
+    color: var(--text2);
+    padding: 3px 8px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 500;
+  }
+
+  .tag-accent {
+    background: #fdebd0;
+    color: var(--accent);
+  }
+
+  .empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--text2);
+  }
+
+  .empty-state .icon { font-size: 48px; margin-bottom: 16px; }
+  .empty-state h3 { font-family: 'Playfair Display', serif; font-size: 20px; color: var(--text); margin-bottom: 8px; }
+
+  /* RECIPE DETAIL */
+  #detail-page { padding-bottom: 100px; }
+
+  .detail-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+
+  .detail-img {
+    width: 100%;
+    height: 220px;
+    object-fit: cover;
+    background: linear-gradient(135deg, var(--surface2), var(--border));
+    border-radius: var(--radius);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 64px;
+    margin-bottom: 20px;
+  }
+
+  .detail-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 30px;
+    font-weight: 900;
+    line-height: 1.2;
+    margin-bottom: 12px;
+  }
+
+  .detail-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 20px;
+  }
+
+  .portions-control {
+    background: var(--surface);
+    border: 2px solid var(--border);
+    border-radius: 12px;
+    padding: 14px 16px;
+    margin-bottom: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .portions-label { font-weight: 500; }
+
+  .portions-btn-group { display: flex; align-items: center; gap: 12px; }
+
+  .portions-btn {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    border: 2px solid var(--accent);
+    background: transparent;
+    color: var(--accent);
+    font-size: 18px;
+    font-weight: 700;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s;
+  }
+
+  .portions-btn:hover { background: var(--accent); color: white; }
+
+  .portions-val {
+    font-family: 'Playfair Display', serif;
+    font-size: 24px;
+    font-weight: 700;
+    min-width: 32px;
+    text-align: center;
+  }
+
+  .section-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 20px;
+    font-weight: 700;
+    margin-bottom: 14px;
+    margin-top: 28px;
+  }
+
+  .ingredient-list { list-style: none; }
+
+  .ingredient-item {
+    display: flex;
+    align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+    gap: 12px;
+    font-size: 15px;
+  }
+
+  .ingredient-item:last-child { border-bottom: none; }
+
+  .ingredient-amount {
+    font-weight: 600;
+    color: var(--accent);
+    min-width: 70px;
+  }
+
+  .steps-list { list-style: none; counter-reset: steps; }
+
+  .step-item {
+    display: flex;
+    gap: 14px;
+    padding: 14px 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .step-item:last-child { border-bottom: none; }
+
+  .step-num {
+    width: 28px;
+    height: 28px;
+    background: var(--accent);
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+
+  .step-text { font-size: 15px; line-height: 1.6; padding-top: 2px; }
+
+  .action-bar {
+    display: flex;
+    gap: 10px;
+    margin-top: 28px;
+    flex-wrap: wrap;
+  }
+
+  /* SHOPPING LIST */
+  .shopping-section {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    margin-bottom: 16px;
+    overflow: hidden;
+  }
+
+  .shopping-section-header {
+    padding: 14px 16px;
+    background: var(--surface2);
+    font-weight: 600;
+    font-size: 14px;
+    color: var(--text2);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .shopping-item {
+    display: flex;
+    align-items: center;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+    gap: 12px;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+
+  .shopping-item:last-child { border-bottom: none; }
+  .shopping-item:hover { background: var(--surface2); }
+
+  .shopping-item.checked { opacity: 0.5; }
+
+  .shopping-item.checked .item-name { text-decoration: line-through; }
+
+  .checkbox {
+    width: 22px;
+    height: 22px;
+    border-radius: 6px;
+    border: 2px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: all 0.15s;
+  }
+
+  .shopping-item.checked .checkbox {
+    background: var(--success);
+    border-color: var(--success);
+  }
+
+  .item-name { flex: 1; font-size: 15px; }
+  .item-amount { font-size: 13px; color: var(--text2); font-weight: 500; }
+
+  /* ADD RECIPE FORM */
+  .ingredient-row {
+    display: grid;
+    grid-template-columns: 1fr 80px 80px 36px;
+    gap: 8px;
+    align-items: end;
+    margin-bottom: 8px;
+  }
+
+  .step-row {
+    display: grid;
+    grid-template-columns: 1fr 36px;
+    gap: 8px;
+    align-items: start;
+    margin-bottom: 8px;
+  }
+
+  .remove-btn {
+    width: 36px;
+    height: 36px;
+    border: 2px solid var(--border);
+    background: transparent;
+    border-radius: 8px;
+    color: var(--text2);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s;
+    font-size: 18px;
+    flex-shrink: 0;
+    align-self: end;
+    margin-bottom: 0;
+  }
+
+  .remove-btn:hover { border-color: #dc2626; color: #dc2626; background: #fee2e2; }
+
+  .add-row-btn {
+    border: 2px dashed var(--border);
+    background: transparent;
+    width: 100%;
+    padding: 10px;
+    border-radius: 10px;
+    color: var(--text2);
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    transition: all 0.15s;
+    margin-top: 4px;
+    margin-bottom: 8px;
+  }
+
+  .add-row-btn:hover { border-color: var(--accent); color: var(--accent); background: #fdebd0; }
+
+  /* MODAL */
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 200;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    backdrop-filter: blur(4px);
+  }
+
+  .modal {
+    background: var(--surface);
+    border-radius: 20px;
+    padding: 32px;
+    width: 100%;
+    max-width: 400px;
+    box-shadow: 0 24px 64px rgba(0,0,0,0.2);
+  }
+
+  .modal h3 {
+    font-family: 'Playfair Display', serif;
+    font-size: 22px;
+    font-weight: 700;
+    margin-bottom: 8px;
+  }
+
+  .modal p { color: var(--text2); font-size: 14px; margin-bottom: 20px; }
+
+  .code-display {
+    background: var(--surface2);
+    border: 2px dashed var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    text-align: center;
+    margin-bottom: 20px;
+  }
+
+  .code-display .code {
+    font-family: monospace;
+    font-size: 32px;
+    font-weight: 700;
+    letter-spacing: 6px;
+    color: var(--accent);
+  }
+
+  .modal-btns { display: flex; gap: 10px; }
+  .modal-btns .btn { flex: 1; }
+
+  /* FAMILY PAGE */
+  .member-list { list-style: none; }
+
+  .member-item {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .member-item:last-child { border-bottom: none; }
+
+  .avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    font-weight: 700;
+    color: white;
+    flex-shrink: 0;
+  }
+
+  .member-info { flex: 1; }
+  .member-name { font-weight: 500; }
+  .member-role { font-size: 12px; color: var(--text2); }
+
+  .info-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    margin-bottom: 16px;
+  }
+
+  .info-card-label {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text2);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 6px;
+  }
+
+  .info-card-value {
+    font-family: 'Playfair Display', serif;
+    font-size: 22px;
+    font-weight: 700;
+  }
+
+  .hidden { display: none !important; }
+
+  .loading {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--text2);
+    font-size: 15px;
+  }
+
+  .spinner {
+    width: 32px;
+    height: 32px;
+    border: 3px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin: 0 auto 16px;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* FAMILY SETUP */
+  #family-screen {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #1a1208 0%, #3d2b1a 50%, #c8602a 100%);
+    padding: 20px;
+  }
+
+  .family-card {
+    background: var(--surface);
+    border-radius: 24px;
+    padding: 40px;
+    width: 100%;
+    max-width: 420px;
+    box-shadow: 0 24px 80px rgba(0,0,0,0.3);
+  }
+
+  .family-card h2 {
+    font-family: 'Playfair Display', serif;
+    font-size: 26px;
+    font-weight: 700;
+    margin-bottom: 8px;
+  }
+
+  .family-card p { color: var(--text2); margin-bottom: 28px; font-size: 14px; }
+
+  .choice-btn {
+    width: 100%;
+    padding: 18px 20px;
+    border: 2px solid var(--border);
+    border-radius: 14px;
+    background: var(--surface);
+    text-align: left;
+    cursor: pointer;
+    margin-bottom: 12px;
+    transition: all 0.2s;
+    font-family: 'DM Sans', sans-serif;
+  }
+
+  .choice-btn:hover { border-color: var(--accent); background: #fdebd0; }
+
+  .choice-btn .choice-title { font-weight: 600; font-size: 16px; display: block; }
+  .choice-btn .choice-desc { font-size: 13px; color: var(--text2); display: block; margin-top: 2px; }
+
+  /* Category filter */
+  .filter-row {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    padding-bottom: 4px;
+    margin-bottom: 16px;
+    scrollbar-width: none;
+  }
+  .filter-row::-webkit-scrollbar { display: none; }
+
+  .filter-chip {
+    padding: 7px 14px;
+    border-radius: 20px;
+    border: 2px solid var(--border);
+    background: var(--surface);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text2);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.15s;
+  }
+
+  .filter-chip.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: white;
+  }
+
+  .fab {
+    position: fixed;
+    bottom: 80px;
+    right: 20px;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: var(--accent);
+    color: white;
+    border: none;
+    font-size: 26px;
+    cursor: pointer;
+    box-shadow: 0 4px 16px rgba(200,96,42,0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 99;
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+
+  .fab:hover { transform: scale(1.1); box-shadow: 0 6px 24px rgba(200,96,42,0.5); }
+
+  .form-section-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 18px;
+    font-weight: 700;
+    margin: 20px 0 12px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid var(--border);
+  }
+</style>
+</head>
+<body>
+
+<!-- AUTH SCREEN -->
+<div id="auth-screen">
+  <div class="auth-card">
+    <div class="auth-logo">
+      <h1>Pantrio</h1>
+      <p>Deine Familienrezepte, immer dabei</p>
+    </div>
+
+    <div id="auth-error" class="error-msg hidden"></div>
+    <div id="auth-success" class="success-msg hidden"></div>
+
+    <div class="auth-tabs">
+      <button class="auth-tab active" onclick="switchAuthTab('login')">Anmelden</button>
+      <button class="auth-tab" onclick="switchAuthTab('register')">Registrieren</button>
+    </div>
+
+    <!-- LOGIN -->
+    <div id="login-form">
+      <div class="form-group">
+        <label>E-Mail</label>
+        <input type="email" id="login-email" placeholder="mail@beispiel.de">
+      </div>
+      <div class="form-group">
+        <label>Passwort</label>
+        <input type="password" id="login-password" placeholder="••••••••">
+      </div>
+      <button class="btn btn-primary" onclick="login()">Anmelden</button>
+    </div>
+
+    <!-- REGISTER -->
+    <div id="register-form" class="hidden">
+      <div class="form-group">
+        <label>Name</label>
+        <input type="text" id="reg-name" placeholder="Dein Name">
+      </div>
+      <div class="form-group">
+        <label>E-Mail</label>
+        <input type="email" id="reg-email" placeholder="mail@beispiel.de">
+      </div>
+      <div class="form-group">
+        <label>Passwort</label>
+        <input type="password" id="reg-password" placeholder="min. 6 Zeichen">
+      </div>
+      <button class="btn btn-primary" onclick="register()">Konto erstellen</button>
+    </div>
+  </div>
+</div>
+
+<!-- FAMILY SETUP SCREEN -->
+<div id="family-screen" class="hidden">
+  <div class="family-card">
+    <div style="text-align:center; margin-bottom:24px;">
+      <div style="font-size:48px; margin-bottom:8px;">🏠</div>
+      <h2>Willkommen!</h2>
+      <p>Erstelle eine neue Familie oder tritt einer bestehenden bei</p>
+    </div>
+
+    <div id="family-error" class="error-msg hidden"></div>
+
+    <div id="family-choice">
+      <button class="choice-btn" onclick="showCreateFamily()">
+        <span class="choice-title">✨ Familie erstellen</span>
+        <span class="choice-desc">Leg eine neue Familiengruppe an und lade andere ein</span>
+      </button>
+      <button class="choice-btn" onclick="showJoinFamily()">
+        <span class="choice-title">🔗 Familie beitreten</span>
+        <span class="choice-desc">Tritt mit einem Einladungscode bei</span>
+      </button>
+    </div>
+
+    <div id="create-family-form" class="hidden">
+      <div class="form-group">
+        <label>Familienname</label>
+        <input type="text" id="family-name" placeholder="z.B. Familie Müller">
+      </div>
+      <div style="display:flex; gap:10px;">
+        <button class="btn btn-secondary" onclick="showFamilyChoice()">Zurück</button>
+        <button class="btn btn-primary" onclick="createFamily()" style="flex:1">Erstellen</button>
+      </div>
+    </div>
+
+    <div id="join-family-form" class="hidden">
+      <div class="form-group">
+        <label>Einladungscode (6 Zeichen)</label>
+        <input type="text" id="join-code" placeholder="z.B. ABC123" maxlength="6" style="text-transform:uppercase; letter-spacing:4px; font-size:20px; text-align:center;">
+      </div>
+      <div style="display:flex; gap:10px;">
+        <button class="btn btn-secondary" onclick="showFamilyChoice()">Zurück</button>
+        <button class="btn btn-primary" onclick="joinFamily()" style="flex:1">Beitreten</button>
+      </div>
+    </div>
+
+    <div style="margin-top:16px;">
+      <button class="btn btn-ghost" style="width:100%" onclick="logout()">Anderes Konto nutzen</button>
+    </div>
+  </div>
+</div>
+
+<!-- MAIN APP -->
+<div id="app-screen">
+  <!-- TOPBAR -->
+  <div class="topbar">
+    <div class="topbar-logo">Pantrio</div>
+    <div class="topbar-right">
+      <div class="family-badge">
+        <span>🏠</span>
+        <span id="topbar-family-name">Familie</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- RECIPES PAGE -->
+  <div id="recipes-page" class="page active">
+    <div class="page-header">
+      <div class="page-title">Rezepte</div>
+    </div>
+    <div class="search-bar">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" /></svg>
+      <input type="text" placeholder="Rezept suchen…" oninput="filterRecipes(this.value)">
+    </div>
+    <div class="filter-row" id="category-filters"></div>
+    <div class="recipe-grid" id="recipe-grid">
+      <div class="loading" style="grid-column:1/-1"><div class="spinner"></div>Rezepte laden…</div>
+    </div>
+    <button class="fab" onclick="showAddRecipe()" title="Rezept hinzufügen">＋</button>
+  </div>
+
+  <!-- DETAIL PAGE -->
+  <div id="detail-page" class="page">
+    <button class="btn btn-ghost" onclick="showPage('recipes-page')" style="margin-bottom:16px; padding-left:0">
+      ← Zurück
+    </button>
+    <div id="detail-content"></div>
+  </div>
+
+  <!-- ADD/EDIT RECIPE PAGE -->
+  <div id="add-recipe-page" class="page">
+    <div class="page-header">
+      <div class="page-title" id="add-recipe-title">Neues Rezept</div>
+    </div>
+
+    <div class="form-section-title">Grundinfos</div>
+    <div class="form-group">
+      <label>Rezeptname *</label>
+      <input type="text" id="r-name" placeholder="z.B. Omas Apfelkuchen">
+    </div>
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+      <div class="form-group">
+        <label>Kategorie</label>
+        <select id="r-category">
+          <option value="Hauptgericht">Hauptgericht</option>
+          <option value="Vorspeise">Vorspeise</option>
+          <option value="Dessert">Dessert</option>
+          <option value="Frühstück">Frühstück</option>
+          <option value="Snack">Snack</option>
+          <option value="Backen">Backen</option>
+          <option value="Getränk">Getränk</option>
+          <option value="Sonstiges">Sonstiges</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Portionen</label>
+        <input type="number" id="r-portions" value="4" min="1" max="50">
+      </div>
+    </div>
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+      <div class="form-group">
+        <label>⏱ Zubereitungszeit (min)</label>
+        <input type="number" id="r-preptime" placeholder="30" min="0">
+      </div>
+      <div class="form-group">
+        <label>🔥 Schwierigkeit</label>
+        <select id="r-difficulty">
+          <option value="Einfach">Einfach</option>
+          <option value="Mittel">Mittel</option>
+          <option value="Schwer">Schwer</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Emoji (als Bild)</label>
+      <input type="text" id="r-emoji" placeholder="🍕" maxlength="4">
+    </div>
+    <div class="form-group">
+      <label>Kurzbeschreibung</label>
+      <textarea id="r-desc" placeholder="Worum geht's?" rows="2"></textarea>
+    </div>
+
+    <div class="form-section-title">Zutaten</div>
+    <div style="display:grid; grid-template-columns:1fr 80px 80px 36px; gap:8px; margin-bottom:8px;">
+      <span style="font-size:12px; color:var(--text2); font-weight:500;">Zutat</span>
+      <span style="font-size:12px; color:var(--text2); font-weight:500;">Menge</span>
+      <span style="font-size:12px; color:var(--text2); font-weight:500;">Einheit</span>
+      <span></span>
+    </div>
+    <div id="ingredients-list"></div>
+    <button class="add-row-btn" onclick="addIngredientRow()">+ Zutat hinzufügen</button>
+
+    <div class="form-section-title">Zubereitung</div>
+    <div id="steps-list"></div>
+    <button class="add-row-btn" onclick="addStepRow()">+ Schritt hinzufügen</button>
+
+    <div style="display:flex; gap:10px; margin-top:24px;">
+      <button class="btn btn-secondary" onclick="cancelAddRecipe()">Abbrechen</button>
+      <button class="btn btn-primary" onclick="saveRecipe()" style="flex:1">Rezept speichern</button>
+    </div>
+    <div id="save-error" class="error-msg hidden" style="margin-top:12px;"></div>
+  </div>
+
+  <!-- SHOPPING PAGE -->
+  <div id="shopping-page" class="page">
+    <div class="page-header">
+      <div class="page-title">Einkaufsliste</div>
+      <button class="btn btn-ghost" onclick="clearChecked()">Abhaken löschen</button>
+    </div>
+    <div id="shopping-from-recipe" style="margin-bottom:20px;">
+      <div class="form-group">
+        <label>Rezept zur Liste hinzufügen</label>
+        <select id="recipe-select">
+          <option value="">Rezept wählen…</option>
+        </select>
+      </div>
+      <div style="display:flex; gap:10px; align-items:center;">
+        <div class="form-group" style="margin:0; flex:1;">
+          <label>Portionen</label>
+          <input type="number" id="shop-portions" value="4" min="1" max="50">
+        </div>
+        <button class="btn btn-primary" onclick="addRecipeToShoppingList()" style="margin-top:18px;">Hinzufügen</button>
+      </div>
+    </div>
+    <div style="display:flex; gap:10px; margin-bottom:20px; flex-wrap:wrap;">
+      <button class="btn btn-danger" onclick="clearShoppingList()">Liste leeren</button>
+    </div>
+    <div id="shopping-list-content">
+      <div class="empty-state">
+        <div class="icon">🛒</div>
+        <h3>Noch nichts auf der Liste</h3>
+        <p>Wähle ein Rezept und füge Zutaten hinzu</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- FAMILY PAGE -->
+  <div id="family-page" class="page">
+    <div class="page-title" style="margin-bottom:20px;">Familie</div>
+
+    <div class="info-card">
+      <div class="info-card-label">Familienname</div>
+      <div class="info-card-value" id="family-name-display">–</div>
+    </div>
+
+    <div class="info-card" style="cursor:pointer;" onclick="showInviteCode()">
+      <div class="info-card-label">Einladungscode (tippen zum Anzeigen)</div>
+      <div class="info-card-value" id="family-code-display" style="letter-spacing:4px; color:var(--accent);">••••••</div>
+    </div>
+
+    <div style="margin-bottom:8px; font-weight:600; font-size:15px; margin-top:4px;">Mitglieder</div>
+    <div class="info-card" style="padding:0; overflow:hidden;">
+      <ul class="member-list" id="member-list" style="padding:0 16px;">
+        <li style="padding:20px 0; color:var(--text2); text-align:center;">Lade…</li>
+      </ul>
+    </div>
+
+    <div style="margin-top:24px;">
+      <button class="btn btn-danger" onclick="logout()" style="width:100%">Abmelden</button>
+    </div>
+  </div>
+
+  <!-- BOTTOM NAV -->
+  <nav class="bottom-nav">
+    <button class="nav-item active" id="nav-recipes" onclick="showPage('recipes-page')">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 0 0 6 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 0 1 6 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 0 1 6-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0 0 18 18a8.966 8.966 0 0 0-6 2.292m0-14.25v14.25" /></svg>
+      Rezepte
+    </button>
+    <button class="nav-item" id="nav-shopping" onclick="showPage('shopping-page')">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 0 0-3 3h15.75m-12.75-3h11.218c1.121-2.3 2.1-4.684 2.924-7.138a60.114 60.114 0 0 0-16.536-1.84M7.5 14.25 5.106 5.272M6 20.25a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Zm12.75 0a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Z" /></svg>
+      Einkauf
+    </button>
+    <button class="nav-item" id="nav-family" onclick="showPage('family-page')">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M18 18.72a9.094 9.094 0 0 0 3.741-.479 3 3 0 0 0-4.682-2.72m.94 3.198.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0 1 12 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 0 1 6 18.719m12 0a5.971 5.971 0 0 0-.941-3.197m0 0A5.995 5.995 0 0 0 12 12.75a5.995 5.995 0 0 0-5.058 2.772m0 0a3 3 0 0 0-4.681 2.72 8.986 8.986 0 0 0 3.74.477m.94-3.197a5.971 5.971 0 0 0-.94 3.197M15 6.75a3 3 0 1 1-6 0 3 3 0 0 1 6 0Zm6 3a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Zm-13.5 0a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Z" /></svg>
+      Familie
+    </button>
+  </nav>
+</div>
+
+<!-- MODAL: Invite Code -->
+<div id="invite-modal" class="modal-overlay hidden">
+  <div class="modal">
+    <h3>Einladungscode</h3>
+    <p>Teile diesen Code mit Familienmitgliedern, damit sie beitreten können.</p>
+    <div class="code-display">
+      <div class="code" id="modal-code">–</div>
+    </div>
+    <div class="modal-btns">
+      <button class="btn btn-secondary" onclick="closeModal('invite-modal')">Schließen</button>
+      <button class="btn btn-primary" onclick="copyCode()">📋 Kopieren</button>
+    </div>
+  </div>
+</div>
+
+<!-- Firebase -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, updateProfile } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import { getDatabase, ref, set, get, push, onValue, update, remove } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyCwEc0C3hBaWeipnxIoGY_ugmtH1znuvZ4",
+  authDomain: "pantrio-de.firebaseapp.com",
+  databaseURL: "https://pantrio-de-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "pantrio-de"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getDatabase(app);
+
+// State
+let currentUser = null;
+let currentFamilyId = null;
+let currentFamilyData = null;
+let allRecipes = {};
+let shoppingList = {};
+let editingRecipeId = null;
+let activeCategory = 'Alle';
+let codeVisible = false;
+
+// ---- AUTH ----
+window.switchAuthTab = (tab) => {
+  document.getElementById('login-form').classList.toggle('hidden', tab !== 'login');
+  document.getElementById('register-form').classList.toggle('hidden', tab !== 'register');
+  document.querySelectorAll('.auth-tab').forEach((t,i) => {
+    t.classList.toggle('active', (i===0 && tab==='login') || (i===1 && tab==='register'));
+  });
+  clearAuthMessages();
+};
+
+function showAuthError(msg) {
+  const el = document.getElementById('auth-error');
+  el.textContent = msg; el.classList.remove('hidden');
+}
+function clearAuthMessages() {
+  document.getElementById('auth-error').classList.add('hidden');
+  document.getElementById('auth-success').classList.add('hidden');
+}
+
+window.login = async () => {
+  clearAuthMessages();
+  const email = document.getElementById('login-email').value.trim();
+  const pw = document.getElementById('login-password').value;
+  if (!email || !pw) { showAuthError('Bitte alle Felder ausfüllen.'); return; }
+  try {
+    await signInWithEmailAndPassword(auth, email, pw);
+  } catch(e) {
+    showAuthError('Anmeldung fehlgeschlagen: ' + friendlyError(e.code));
+  }
+};
+
+window.register = async () => {
+  clearAuthMessages();
+  const name = document.getElementById('reg-name').value.trim();
+  const email = document.getElementById('reg-email').value.trim();
+  const pw = document.getElementById('reg-password').value;
+  if (!name || !email || !pw) { showAuthError('Bitte alle Felder ausfüllen.'); return; }
+  if (pw.length < 6) { showAuthError('Passwort muss mindestens 6 Zeichen haben.'); return; }
+  try {
+    const cred = await createUserWithEmailAndPassword(auth, email, pw);
+    await updateProfile(cred.user, { displayName: name });
+    await set(ref(db, `users/${cred.user.uid}`), { name, email, createdAt: Date.now() });
+  } catch(e) {
+    showAuthError('Registrierung fehlgeschlagen: ' + friendlyError(e.code));
+  }
+};
+
+window.logout = async () => {
+  await signOut(auth);
+};
+
+function friendlyError(code) {
+  const map = {
+    'auth/invalid-email': 'Ungültige E-Mail',
+    'auth/user-not-found': 'Kein Konto mit dieser E-Mail',
+    'auth/wrong-password': 'Falsches Passwort',
+    'auth/email-already-in-use': 'E-Mail bereits registriert',
+    'auth/weak-password': 'Passwort zu schwach',
+    'auth/invalid-credential': 'E-Mail oder Passwort falsch'
+  };
+  return map[code] || code;
+}
+
+// ---- FAMILY ----
+window.showCreateFamily = () => {
+  document.getElementById('family-choice').classList.add('hidden');
+  document.getElementById('create-family-form').classList.remove('hidden');
+};
+window.showJoinFamily = () => {
+  document.getElementById('family-choice').classList.add('hidden');
+  document.getElementById('join-family-form').classList.remove('hidden');
+};
+window.showFamilyChoice = () => {
+  document.getElementById('family-choice').classList.remove('hidden');
+  document.getElementById('create-family-form').classList.add('hidden');
+  document.getElementById('join-family-form').classList.add('hidden');
+};
+
+function showFamilyError(msg) {
+  const el = document.getElementById('family-error');
+  el.textContent = msg; el.classList.remove('hidden');
+}
+
+function generateCode() {
+  return Math.random().toString(36).substring(2, 8).toUpperCase();
+}
+
+window.createFamily = async () => {
+  const name = document.getElementById('family-name').value.trim();
+  if (!name) { showFamilyError('Bitte einen Familiennamen eingeben.'); return; }
+  const code = generateCode();
+  const famRef = push(ref(db, 'families'));
+  const famId = famRef.key;
+  await set(famRef, {
+    name, code,
+    createdBy: currentUser.uid,
+    createdAt: Date.now(),
+    members: { [currentUser.uid]: { name: currentUser.displayName, role: 'admin', joinedAt: Date.now() } }
+  });
+  await set(ref(db, `users/${currentUser.uid}/familyId`), famId);
+  await set(ref(db, `familyCodes/${code}`), famId);
+  currentFamilyId = famId;
+  loadApp();
+};
+
+window.joinFamily = async () => {
+  const code = document.getElementById('join-code').value.trim().toUpperCase();
+  if (code.length !== 6) { showFamilyError('Bitte einen 6-stelligen Code eingeben.'); return; }
+  const codeSnap = await get(ref(db, `familyCodes/${code}`));
+  if (!codeSnap.exists()) { showFamilyError('Code nicht gefunden. Bitte prüfen.'); return; }
+  const famId = codeSnap.val();
+  await update(ref(db, `families/${famId}/members/${currentUser.uid}`), {
+    name: currentUser.displayName, role: 'member', joinedAt: Date.now()
+  });
+  await set(ref(db, `users/${currentUser.uid}/familyId`), famId);
+  currentFamilyId = famId;
+  loadApp();
+};
+
+// ---- AUTH STATE ----
+onAuthStateChanged(auth, async (user) => {
+  if (user) {
+    currentUser = user;
+    document.getElementById('auth-screen').style.display = 'none';
+
+    const userSnap = await get(ref(db, `users/${user.uid}/familyId`));
+    if (userSnap.exists()) {
+      currentFamilyId = userSnap.val();
+      loadApp();
+    } else {
+      document.getElementById('family-screen').classList.remove('hidden');
+    }
+  } else {
+    currentUser = null;
+    currentFamilyId = null;
+    document.getElementById('auth-screen').style.display = 'flex';
+    document.getElementById('family-screen').classList.add('hidden');
+    document.getElementById('app-screen').style.display = 'none';
+  }
+});
+
+// ---- APP ----
+function loadApp() {
+  document.getElementById('family-screen').classList.add('hidden');
+  document.getElementById('app-screen').style.display = 'block';
+  loadFamilyData();
+  listenRecipes();
+  listenShoppingList();
+}
+
+function loadFamilyData() {
+  onValue(ref(db, `families/${currentFamilyId}`), (snap) => {
+    if (!snap.exists()) return;
+    currentFamilyData = snap.val();
+    document.getElementById('topbar-family-name').textContent = currentFamilyData.name;
+    document.getElementById('family-name-display').textContent = currentFamilyData.name;
+    document.getElementById('modal-code').textContent = currentFamilyData.code;
+
+    // Members
+    const members = currentFamilyData.members || {};
+    const ul = document.getElementById('member-list');
+    ul.innerHTML = '';
+    Object.entries(members).forEach(([uid, m]) => {
+      const li = document.createElement('li');
+      li.className = 'member-item';
+      li.innerHTML = `
+        <div class="avatar">${(m.name||'?')[0].toUpperCase()}</div>
+        <div class="member-info">
+          <div class="member-name">${m.name||'Unbekannt'} ${uid===currentUser.uid ? '<span class="tag tag-accent">Du</span>' : ''}</div>
+          <div class="member-role">${m.role==='admin' ? '👑 Admin' : '👤 Mitglied'}</div>
+        </div>
+      `;
+      ul.appendChild(li);
+    });
+  });
+}
+
+// ---- RECIPES ----
+function listenRecipes() {
+  onValue(ref(db, `families/${currentFamilyId}/recipes`), (snap) => {
+    allRecipes = snap.val() || {};
+    renderRecipes();
+    updateShoppingRecipeSelect();
+  });
+}
+
+function renderRecipes(search='') {
+  const grid = document.getElementById('recipe-grid');
+  const cats = new Set(['Alle']);
+  Object.values(allRecipes).forEach(r => r.category && cats.add(r.category));
+
+  // Render filters
+  const filterRow = document.getElementById('category-filters');
+  filterRow.innerHTML = '';
+  cats.forEach(cat => {
+    const chip = document.createElement('button');
+    chip.className = 'filter-chip' + (cat === activeCategory ? ' active' : '');
+    chip.textContent = cat;
+    chip.onclick = () => { activeCategory = cat; renderRecipes(search); };
+    filterRow.appendChild(chip);
+  });
+
+  let entries = Object.entries(allRecipes);
+  if (activeCategory !== 'Alle') entries = entries.filter(([,r]) => r.category === activeCategory);
+  if (search) {
+    const s = search.toLowerCase();
+    entries = entries.filter(([,r]) => r.name?.toLowerCase().includes(s) || r.description?.toLowerCase().includes(s));
+  }
+
+  grid.innerHTML = '';
+  if (entries.length === 0) {
+    grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1">
+      <div class="icon">📖</div>
+      <h3>Keine Rezepte gefunden</h3>
+      <p>Füge dein erstes Rezept hinzu!</p>
+    </div>`;
+    return;
+  }
+
+  entries.forEach(([id, recipe]) => {
+    const card = document.createElement('div');
+    card.className = 'recipe-card';
+    card.onclick = () => showDetail(id);
+    card.innerHTML = `
+      <div class="recipe-card-img">${recipe.emoji || '🍽'}</div>
+      <div class="recipe-card-body">
+        <div class="recipe-card-title">${recipe.name}</div>
+        <div class="recipe-card-meta">
+          <span class="tag">${recipe.category||'Sonstiges'}</span>
+          ${recipe.prepTime ? `<span>⏱ ${recipe.prepTime}min</span>` : ''}
+        </div>
+      </div>
+    `;
+    grid.appendChild(card);
+  });
+}
+
+window.filterRecipes = (val) => renderRecipes(val);
+
+// ---- DETAIL ----
+window.showDetail = (id) => {
+  const recipe = allRecipes[id];
+  if (!recipe) return;
+
+  let currentPortions = recipe.portions || 4;
+  const base = recipe.portions || 4;
+
+  function renderDetail() {
+    const scale = currentPortions / base;
+    const ingredients = recipe.ingredients || [];
+    const steps = recipe.steps || [];
+
+    document.getElementById('detail-content').innerHTML = `
+      <div class="detail-img">${recipe.emoji || '🍽'}</div>
+      <div class="detail-title">${recipe.name}</div>
+      <div class="detail-meta">
+        <span class="tag tag-accent">${recipe.category||'Sonstiges'}</span>
+        ${recipe.prepTime ? `<span class="tag">⏱ ${recipe.prepTime} min</span>` : ''}
+        ${recipe.difficulty ? `<span class="tag">${recipe.difficulty}</span>` : ''}
+      </div>
+      ${recipe.description ? `<p style="color:var(--text2); font-size:15px; margin-bottom:16px;">${recipe.description}</p>` : ''}
+
+      <div class="portions-control">
+        <span class="portions-label">Portionen</span>
+        <div class="portions-btn-group">
+          <button class="portions-btn" id="btn-minus">−</button>
+          <span class="portions-val" id="portions-display">${currentPortions}</span>
+          <button class="portions-btn" id="btn-plus">＋</button>
+        </div>
+      </div>
+
+      ${ingredients.length > 0 ? `
+        <div class="section-title">Zutaten</div>
+        <ul class="ingredient-list">
+          ${ingredients.map(ing => {
+            const amt = ing.amount ? (Math.round(ing.amount * scale * 10) / 10) : '';
+            return `<li class="ingredient-item">
+              <span class="ingredient-amount">${amt} ${ing.unit||''}</span>
+              <span>${ing.name}</span>
+            </li>`;
+          }).join('')}
+        </ul>
+      ` : ''}
+
+      ${steps.length > 0 ? `
+        <div class="section-title">Zubereitung</div>
+        <ol class="steps-list">
+          ${steps.map((step, i) => `
+            <li class="step-item">
+              <div class="step-num">${i+1}</div>
+              <div class="step-text">${step}</div>
+            </li>
+          `).join('')}
+        </ol>
+      ` : ''}
+
+      <div class="action-bar">
+        <button class="btn btn-secondary" onclick="addToShoppingListDirect('${id}')">🛒 Zur Einkaufsliste</button>
+        <button class="btn btn-ghost" onclick="editRecipe('${id}')">✏️ Bearbeiten</button>
+        <button class="btn btn-danger" onclick="deleteRecipe('${id}')">🗑</button>
+      </div>
+    `;
+
+    document.getElementById('btn-minus').onclick = () => {
+      if (currentPortions > 1) { currentPortions--; renderDetail(); }
+    };
+    document.getElementById('btn-plus').onclick = () => {
+      currentPortions++; renderDetail();
+    };
+  }
+
+  renderDetail();
+  showPage('detail-page');
+};
+
+window.addToShoppingListDirect = (id) => {
+  const recipe = allRecipes[id];
+  if (!recipe) return;
+  const portions = parseInt(document.getElementById('portions-display')?.textContent) || recipe.portions || 4;
+  addIngredientsToList(recipe, portions);
+  showPage('shopping-page');
+};
+
+window.deleteRecipe = async (id) => {
+  if (!confirm('Rezept wirklich löschen?')) return;
+  await remove(ref(db, `families/${currentFamilyId}/recipes/${id}`));
+  showPage('recipes-page');
+};
+
+// ---- ADD/EDIT ----
+window.showAddRecipe = () => {
+  editingRecipeId = null;
+  document.getElementById('add-recipe-title').textContent = 'Neues Rezept';
+  document.getElementById('r-name').value = '';
+  document.getElementById('r-category').value = 'Hauptgericht';
+  document.getElementById('r-portions').value = '4';
+  document.getElementById('r-preptime').value = '';
+  document.getElementById('r-difficulty').value = 'Einfach';
+  document.getElementById('r-emoji').value = '';
+  document.getElementById('r-desc').value = '';
+  document.getElementById('ingredients-list').innerHTML = '';
+  document.getElementById('steps-list').innerHTML = '';
+  addIngredientRow(); addIngredientRow(); addIngredientRow();
+  addStepRow();
+  showPage('add-recipe-page');
+};
+
+window.editRecipe = (id) => {
+  const r = allRecipes[id];
+  if (!r) return;
+  editingRecipeId = id;
+  document.getElementById('add-recipe-title').textContent = 'Rezept bearbeiten';
+  document.getElementById('r-name').value = r.name || '';
+  document.getElementById('r-category').value = r.category || 'Hauptgericht';
+  document.getElementById('r-portions').value = r.portions || 4;
+  document.getElementById('r-preptime').value = r.prepTime || '';
+  document.getElementById('r-difficulty').value = r.difficulty || 'Einfach';
+  document.getElementById('r-emoji').value = r.emoji || '';
+  document.getElementById('r-desc').value = r.description || '';
+
+  document.getElementById('ingredients-list').innerHTML = '';
+  (r.ingredients || []).forEach(ing => addIngredientRow(ing));
+  if ((r.ingredients||[]).length === 0) addIngredientRow();
+
+  document.getElementById('steps-list').innerHTML = '';
+  (r.steps || []).forEach(s => addStepRow(s));
+  if ((r.steps||[]).length === 0) addStepRow();
+
+  showPage('add-recipe-page');
+};
+
+window.cancelAddRecipe = () => showPage('recipes-page');
+
+window.addIngredientRow = (data={}) => {
+  const row = document.createElement('div');
+  row.className = 'ingredient-row';
+  row.innerHTML = `
+    <input type="text" placeholder="Mehl" value="${data.name||''}" class="ing-name">
+    <input type="number" placeholder="200" value="${data.amount||''}" class="ing-amount" min="0" step="0.1">
+    <input type="text" placeholder="g" value="${data.unit||''}" class="ing-unit">
+    <button class="remove-btn" onclick="this.parentElement.remove()">×</button>
+  `;
+  document.getElementById('ingredients-list').appendChild(row);
+};
+
+window.addStepRow = (data='') => {
+  const row = document.createElement('div');
+  row.className = 'step-row';
+  row.innerHTML = `
+    <textarea placeholder="Beschreibe diesen Schritt…" rows="2" class="step-text-input">${data}</textarea>
+    <button class="remove-btn" onclick="this.parentElement.remove()" style="align-self:start; margin-top:0;">×</button>
+  `;
+  document.getElementById('steps-list').appendChild(row);
+};
+
+window.saveRecipe = async () => {
+  const name = document.getElementById('r-name').value.trim();
+  if (!name) {
+    document.getElementById('save-error').textContent = 'Bitte einen Rezeptnamen eingeben.';
+    document.getElementById('save-error').classList.remove('hidden');
+    return;
+  }
+  document.getElementById('save-error').classList.add('hidden');
+
+  const ingredients = [...document.querySelectorAll('.ingredient-row')].map(row => ({
+    name: row.querySelector('.ing-name').value.trim(),
+    amount: parseFloat(row.querySelector('.ing-amount').value) || 0,
+    unit: row.querySelector('.ing-unit').value.trim()
+  })).filter(i => i.name);
+
+  const steps = [...document.querySelectorAll('.step-text-input')]
+    .map(t => t.value.trim()).filter(Boolean);
+
+  const data = {
+    name,
+    category: document.getElementById('r-category').value,
+    portions: parseInt(document.getElementById('r-portions').value) || 4,
+    prepTime: parseInt(document.getElementById('r-preptime').value) || null,
+    difficulty: document.getElementById('r-difficulty').value,
+    emoji: document.getElementById('r-emoji').value || null,
+    description: document.getElementById('r-desc').value.trim() || null,
+    ingredients, steps,
+    updatedAt: Date.now(),
+    updatedBy: currentUser.displayName
+  };
+
+  if (editingRecipeId) {
+    await update(ref(db, `families/${currentFamilyId}/recipes/${editingRecipeId}`), data);
+  } else {
+    data.createdAt = Date.now();
+    data.createdBy = currentUser.displayName;
+    await push(ref(db, `families/${currentFamilyId}/recipes`), data);
+  }
+  showPage('recipes-page');
+};
+
+// ---- SHOPPING LIST ----
+function listenShoppingList() {
+  onValue(ref(db, `families/${currentFamilyId}/shoppingList`), (snap) => {
+    shoppingList = snap.val() || {};
+    renderShoppingList();
+  });
+}
+
+function updateShoppingRecipeSelect() {
+  const sel = document.getElementById('recipe-select');
+  const val = sel.value;
+  sel.innerHTML = '<option value="">Rezept wählen…</option>';
+  Object.entries(allRecipes).forEach(([id, r]) => {
+    const opt = document.createElement('option');
+    opt.value = id; opt.textContent = r.name;
+    sel.appendChild(opt);
+  });
+  sel.value = val;
+}
+
+window.addRecipeToShoppingList = () => {
+  const id = document.getElementById('recipe-select').value;
+  const portions = parseInt(document.getElementById('shop-portions').value) || 4;
+  if (!id) return;
+  const recipe = allRecipes[id];
+  if (!recipe) return;
+  addIngredientsToList(recipe, portions);
+};
+
+function addIngredientsToList(recipe, portions) {
+  const base = recipe.portions || 4;
+  const scale = portions / base;
+  const newList = { ...shoppingList };
+
+  (recipe.ingredients || []).forEach(ing => {
+    if (!ing.name) return;
+    const key = ing.name.toLowerCase().replace(/[^a-z0-9äöüß]/g, '_');
+    const amt = Math.round((ing.amount || 0) * scale * 10) / 10;
+    if (newList[key]) {
+      newList[key].amount = Math.round((newList[key].amount + amt) * 10) / 10;
+    } else {
+      newList[key] = { name: ing.name, amount: amt, unit: ing.unit || '', checked: false, from: recipe.name };
+    }
+  });
+
+  set(ref(db, `families/${currentFamilyId}/shoppingList`), newList);
+}
+
+window.toggleShoppingItem = (key) => {
+  const item = shoppingList[key];
+  if (!item) return;
+  update(ref(db, `families/${currentFamilyId}/shoppingList/${key}`), { checked: !item.checked });
+};
+
+window.clearChecked = () => {
+  const newList = {};
+  Object.entries(shoppingList).forEach(([k,v]) => { if (!v.checked) newList[k] = v; });
+  set(ref(db, `families/${currentFamilyId}/shoppingList`), newList);
+};
+
+window.clearShoppingList = () => {
+  if (!confirm('Einkaufsliste wirklich leeren?')) return;
+  set(ref(db, `families/${currentFamilyId}/shoppingList`), {});
+};
+
+function renderShoppingList() {
+  const container = document.getElementById('shopping-list-content');
+  const items = Object.entries(shoppingList);
+  if (items.length === 0) {
+    container.innerHTML = `<div class="empty-state"><div class="icon">🛒</div><h3>Noch nichts auf der Liste</h3><p>Wähle ein Rezept und füge Zutaten hinzu</p></div>`;
+    return;
+  }
+
+  // Group by checked
+  const unchecked = items.filter(([,v]) => !v.checked);
+  const checked = items.filter(([,v]) => v.checked);
+
+  let html = '';
+  if (unchecked.length > 0) {
+    html += `<div class="shopping-section"><div class="shopping-section-header">Noch kaufen (${unchecked.length})</div>`;
+    unchecked.forEach(([k,v]) => {
+      html += `<div class="shopping-item" onclick="toggleShoppingItem('${k}')">
+        <div class="checkbox"></div>
+        <span class="item-name">${v.name}</span>
+        <span class="item-amount">${v.amount || ''} ${v.unit||''}</span>
+      </div>`;
+    });
+    html += '</div>';
+  }
+  if (checked.length > 0) {
+    html += `<div class="shopping-section"><div class="shopping-section-header">Erledigt (${checked.length})</div>`;
+    checked.forEach(([k,v]) => {
+      html += `<div class="shopping-item checked" onclick="toggleShoppingItem('${k}')">
+        <div class="checkbox"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg></div>
+        <span class="item-name">${v.name}</span>
+        <span class="item-amount">${v.amount || ''} ${v.unit||''}</span>
+      </div>`;
+    });
+    html += '</div>';
+  }
+
+  container.innerHTML = html;
+}
+
+// ---- UI ----
+window.showPage = (pageId) => {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById(pageId).classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  const map = { 'recipes-page': 'nav-recipes', 'shopping-page': 'nav-shopping', 'family-page': 'nav-family' };
+  if (map[pageId]) document.getElementById(map[pageId]).classList.add('active');
+};
+
+window.showInviteCode = () => {
+  if (!codeVisible) {
+    document.getElementById('family-code-display').textContent = currentFamilyData?.code || '–';
+    codeVisible = true;
+  } else {
+    document.getElementById('invite-modal').classList.remove('hidden');
+  }
+};
+
+window.closeModal = (id) => document.getElementById(id).classList.add('hidden');
+
+window.copyCode = () => {
+  const code = currentFamilyData?.code || '';
+  navigator.clipboard.writeText(code).then(() => {
+    document.getElementById('modal-code').textContent = '✓ Kopiert!';
+    setTimeout(() => { document.getElementById('modal-code').textContent = code; }, 1500);
+  });
+};
+</script>
+</body>
+</html>
