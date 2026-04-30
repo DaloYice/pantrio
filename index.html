@@ -2361,7 +2361,7 @@ window.joinFamily = async()=>{
   const snap=await get(ref(db,`familyCodes/${code}`));
   if(!snap.exists()){ famErr('Code nicht gefunden.'); return; }
   const fid=snap.val();
-  await update(ref(db,`families/${fid}/members/${currentUser.uid}`),{name:currentUser.displayName,role:'member',joinedAt:Date.now()});
+  await update(ref(db,`families/${fid}/members/${currentUser.uid}`),{name:currentUser.displayName,role:'member',joinedAt:Date.now(),joinCode:code});
   await set(ref(db,`users/${currentUser.uid}/familyId`),fid);
   familyId=fid; loadApp();
 };
@@ -2542,7 +2542,7 @@ window.joinFamilyFromSwitcher = async() => {
   if(allUserFamilies[fid]){ swErr('Du bist dieser Familie bereits beigetreten.'); return; }
   const famSnap = await get(ref(db,`families/${fid}/name`));
   const famName = famSnap.val()||'Familie';
-  await update(ref(db,`families/${fid}/members/${currentUser.uid}`),{ name:currentUser.displayName, role:'member', joinedAt:Date.now() });
+  await update(ref(db,`families/${fid}/members/${currentUser.uid}`),{ name:currentUser.displayName, role:'member', joinedAt:Date.now(), joinCode:code });
   await update(ref(db,`users/${currentUser.uid}/families`), { [fid]:{ name:famName, role:'member' } });
   await switchToFamily(fid);
   closeModal('family-switcher-modal');
