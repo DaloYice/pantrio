@@ -1276,7 +1276,7 @@ hr { border: none; border-top: 1px solid var(--border); margin: 16px 0; }
     <div id="join-family-form" class="hidden">
       <div class="form-group">
         <label>Einladungscode</label>
-        <input type="text" id="join-code" placeholder="ABC123" maxlength="6" style="text-transform:uppercase;letter-spacing:6px;font-size:22px;text-align:center">
+        <input type="text" id="join-code" placeholder="z.B. AB7Z2KMP9XYZ" maxlength="24" style="text-transform:uppercase;letter-spacing:2px;font-size:18px;text-align:center">
       </div>
       <div style="display:flex;gap:10px">
         <button class="btn btn-secondary" onclick="showFamilyChoice()">Zurück</button>
@@ -1636,6 +1636,7 @@ hr { border: none; border-top: 1px solid var(--border); margin: 16px 0; }
         <div style="display:flex;flex-direction:column;gap:6px">
           <button class="btn btn-primary btn-sm" onclick="showInviteModal()">👁 Anzeigen</button>
           <button class="btn btn-secondary btn-sm" onclick="shareInviteCode()">📤 Teilen</button>
+          <button class="btn btn-outline btn-sm" id="rotate-code-btn" onclick="rotateInviteCode()" style="display:none">🔄 Erneuern</button>
         </div>
       </div>
     </div>
@@ -1745,7 +1746,7 @@ hr { border: none; border-top: 1px solid var(--border); margin: 16px 0; }
 
     <div id="switcher-join-form" class="hidden">
       <div style="font-weight:700;margin-bottom:10px">Familie beitreten</div>
-      <div class="form-group"><label>Einladungscode</label><input type="text" id="sw-join-code" placeholder="ABC123" maxlength="6" style="text-transform:uppercase;letter-spacing:6px;font-size:20px;text-align:center"></div>
+      <div class="form-group"><label>Einladungscode</label><input type="text" id="sw-join-code" placeholder="z.B. AB7Z2KMP9XYZ" maxlength="24" style="text-transform:uppercase;letter-spacing:2px;font-size:16px;text-align:center"></div>
       <div style="display:flex;gap:8px">
         <button class="btn btn-secondary" onclick="hideSwitcherForms()">Zurück</button>
         <button class="btn btn-primary" onclick="joinFamilyFromSwitcher()" style="flex:1">Beitreten</button>
@@ -2342,10 +2343,25 @@ async function seedStarterRecipes(fid) {
   }
 }
 
+// Generate a cryptographically random invite code from an unambiguous alphabet.
+// Default 12 chars from 32-char alphabet ≈ 60 bits entropy.
+window.generateInviteCode = (len = 12) => {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let out = '';
+  if (window.crypto && crypto.getRandomValues) {
+    const arr = new Uint8Array(len);
+    crypto.getRandomValues(arr);
+    for (let i = 0; i < len; i++) out += chars[arr[i] % chars.length];
+  } else {
+    for (let i = 0; i < len; i++) out += chars[Math.floor(Math.random() * chars.length)];
+  }
+  return out;
+};
+
 window.createFamily = async()=>{
   const name=document.getElementById('family-name').value.trim();
   if(!name){ famErr('Bitte einen Namen eingeben.'); return; }
-  const code=Math.random().toString(36).substring(2,8).toUpperCase();
+  const code=window.generateInviteCode();
   const fr=push(ref(db,'families'));
   await set(fr,{ name, code, createdBy:currentUser.uid, createdAt:Date.now(), members:{ [currentUser.uid]:{ name:currentUser.displayName, role:'admin', joinedAt:Date.now() } } });
   await set(ref(db,`users/${currentUser.uid}/familyId`),fr.key);
@@ -2357,7 +2373,7 @@ window.createFamily = async()=>{
 
 window.joinFamily = async()=>{
   const code=document.getElementById('join-code').value.trim().toUpperCase();
-  if(code.length!==6){ famErr('Bitte 6-stelligen Code eingeben.'); return; }
+  if(!code||code.length<4||code.length>24){ famErr('Bitte einen gültigen Einladungscode eingeben.'); return; }
   const snap=await get(ref(db,`familyCodes/${code}`));
   if(!snap.exists()){ famErr('Code nicht gefunden.'); return; }
   const fid=snap.val();
@@ -2439,10 +2455,35 @@ function listenFamily(){
     document.getElementById('topbar-family-name').textContent=familyData.name;
     document.getElementById('fam-name-disp').textContent=familyData.name;
     document.getElementById('modal-code').textContent=familyData.code;
+    const isAdmin = familyData?.members?.[currentUser?.uid]?.role === 'admin';
+    const rotBtn = document.getElementById('rotate-code-btn');
+    if (rotBtn) rotBtn.style.display = isAdmin ? '' : 'none';
     renderFamilyMembers();
     renderAllFamiliesList();
   });
 }
+
+window.rotateInviteCode = async() => {
+  if(!currentUser||!familyId||!familyData) return;
+  if(familyData.members?.[currentUser.uid]?.role !== 'admin'){
+    alert('Nur Admins können den Einladungscode erneuern.');
+    return;
+  }
+  if(!confirm('Einladungscode wirklich erneuern? Der alte Code funktioniert danach nicht mehr.')) return;
+  const oldCode = familyData.code;
+  const newCode = window.generateInviteCode();
+  try{
+    await set(ref(db,`familyCodes/${newCode}`), familyId);
+    await set(ref(db,`families/${familyId}/code`), newCode);
+    if(oldCode && oldCode !== newCode){
+      await remove(ref(db,`familyCodes/${oldCode}`));
+    }
+    if(typeof showPantryToast === 'function'){ showPantryToast('Neuer Code: '+newCode); }
+    else { alert('Neuer Code: '+newCode); }
+  } catch(e){
+    alert('Code-Erneuerung fehlgeschlagen: '+(e?.message||e));
+  }
+};
 
 async function loadAllUserFamilies(){
   const snap = await get(ref(db,`users/${currentUser.uid}/families`));
@@ -2522,7 +2563,7 @@ window.hideSwitcherForms = () => {
 window.createFamilyFromSwitcher = async() => {
   const name = document.getElementById('sw-family-name').value.trim();
   if(!name){ swErr('Bitte einen Namen eingeben.'); return; }
-  const code = Math.random().toString(36).substring(2,8).toUpperCase();
+  const code = window.generateInviteCode();
   const fr = push(ref(db,'families'));
   const fid = fr.key;
   await set(fr,{ name, code, createdBy:currentUser.uid, createdAt:Date.now(), members:{ [currentUser.uid]:{ name:currentUser.displayName, role:'admin', joinedAt:Date.now() } } });
@@ -2535,7 +2576,7 @@ window.createFamilyFromSwitcher = async() => {
 
 window.joinFamilyFromSwitcher = async() => {
   const code = document.getElementById('sw-join-code').value.trim().toUpperCase();
-  if(code.length!==6){ swErr('Bitte 6-stelligen Code eingeben.'); return; }
+  if(!code||code.length<4||code.length>24){ swErr('Bitte einen gültigen Einladungscode eingeben.'); return; }
   const snap = await get(ref(db,`familyCodes/${code}`));
   if(!snap.exists()){ swErr('Code nicht gefunden. Bitte prüfen.'); return; }
   const fid = snap.val();
