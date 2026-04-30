@@ -2802,6 +2802,20 @@ window.saveStaple=async()=>{
   } else {
     await push(ref(db,`families/${familyId}/staples`),item);
   }
+
+  // Check if already in pantry – if not, add to shopping list automatically
+  const inPantry=Object.values(pantry).some(p=>p.name.toLowerCase().trim()===name.toLowerCase().trim());
+  if(!inPantry){
+    const alreadyInShop=Object.values(shoppingList).some(i=>i.name.toLowerCase().trim()===name.toLowerCase().trim()&&!i.checked);
+    if(!alreadyInShop){
+      const key='staple_'+name.toLowerCase().replace(/[^a-z0-9äöüß]/g,'_');
+      const shopItem={ name:item.name, amount:item.amount||null, unit:item.unit||'', category:item.category||'Sonstiges', from:'⭐ Stammliste', checked:false };
+      if(isDemoMode){ shoppingList[key]=shopItem; renderShopping(); }
+      else await update(ref(db,`families/${familyId}/shoppingList`),{[key]:shopItem});
+      showPantryToast(1);
+    }
+  }
+
   toggleStapleForm();
 };
 
