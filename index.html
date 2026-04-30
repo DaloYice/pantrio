@@ -1199,10 +1199,10 @@ hr { border: none; border-top: 1px solid var(--border); margin: 16px 0; }
         <span style="font-size:12px;color:var(--text2);font-weight:600">ODER</span>
         <div style="flex:1;height:1px;background:var(--border)"></div>
       </div>
-      <button class="btn" onclick="startDemo()" style="width:100%;background:linear-gradient(135deg,#fff8e1,#fef3c7);border:2px solid #F59E0B;color:#92400e;font-size:15px;padding:13px">
+      <button class="btn" id="demo-btn" onclick="startDemo()" style="width:100%;background:linear-gradient(135deg,#fff8e1,#fef3c7);border:2px solid #F59E0B;color:#92400e;font-size:15px;padding:13px">
         🧪 Demo ausprobieren – ohne Registrierung
       </button>
-      <p style="text-align:center;font-size:12px;color:var(--text2);margin-top:10px">Beispieldaten, nichts wird gespeichert</p>
+      <p id="demo-hint" style="text-align:center;font-size:12px;color:var(--text2);margin-top:10px">Beispieldaten, nichts wird gespeichert · 10 Minuten</p>
     </div>
 
     <div id="register-form" class="hidden">
@@ -1304,7 +1304,7 @@ hr { border: none; border-top: 1px solid var(--border); margin: 16px 0; }
   </div>
   <div id="demo-banner" class="demo-banner hidden" style="margin:12px 16px 0;border-radius:12px">
     <span class="demo-icon">🧪</span>
-    <span>Demo-Modus – keine Daten werden gespeichert</span>
+    <span style="flex:1">Demo-Modus – <strong id="demo-timer">10:00</strong> verbleibend</span>
     <button class="demo-exit-btn" onclick="exitDemo()">✕ Beenden</button>
   </div>
 
@@ -1715,6 +1715,17 @@ hr { border: none; border-top: 1px solid var(--border); margin: 16px 0; }
   </div>
 </div>
 
+<!-- MODAL: Demo Expired -->
+<div id="demo-expired-modal" class="modal-overlay hidden">
+  <div class="modal" style="text-align:center;max-width:360px;margin:auto;border-radius:24px">
+    <div style="font-size:52px;margin-bottom:12px">⏰</div>
+    <h3 style="margin-bottom:8px">Demo-Zeit abgelaufen</h3>
+    <p style="margin-bottom:24px">Du hast die 10 Minuten Demo genutzt. Erstelle jetzt ein kostenloses Konto um Pantrio dauerhaft zu verwenden – alle Funktionen bleiben erhalten!</p>
+    <button class="btn btn-primary" onclick="goToRegisterFromDemo()" style="margin-bottom:10px">✨ Jetzt kostenlos registrieren</button>
+    <button class="btn btn-ghost" style="width:100%;font-size:13px" onclick="goToLoginFromDemo()">Ich habe bereits ein Konto</button>
+  </div>
+</div>
+
 <!-- MODAL: Add recipe to shopping -->
 <div id="recipe-shop-modal" class="modal-overlay hidden" onclick="closeModal('recipe-shop-modal')">
   <div class="modal" onclick="event.stopPropagation()">
@@ -1776,6 +1787,11 @@ document.addEventListener('DOMContentLoaded', () => {
       results.classList.add('hidden');
     }
   });
+
+  // Check if demo already expired on load
+  if(localStorage.getItem(DEMO_EXPIRED_KEY)){
+    showDemoExpiredLocked();
+  }
 });
 
 // ─── STATE ───
@@ -1882,7 +1898,17 @@ const DEMO_WEEKPLAN = {
   'Freitag':{ 'Mittag':'r5', 'Abend':'r1' },
 };
 
+const DEMO_DURATION = 10 * 60; // 10 minutes in seconds
+const DEMO_EXPIRED_KEY = 'pantrio_demo_expired';
+let demoTimerInterval = null;
+
 window.startDemo = () => {
+  // Check if demo already expired
+  if(localStorage.getItem(DEMO_EXPIRED_KEY)){
+    showDemoExpiredLocked();
+    return;
+  }
+
   isDemoMode = true;
   currentUser = { uid: 'demo', displayName: 'Demo-Nutzer' };
   familyId = 'demo';
@@ -1915,14 +1941,80 @@ window.startDemo = () => {
   document.getElementById('hc-shopping').textContent = Object.values(shoppingList).filter(i=>!i.checked).length;
   const weekTotal = Object.values(weekPlan).reduce((a,d)=>a+Object.keys(d||{}).length,0);
   document.getElementById('hc-week').textContent = weekTotal;
+
+  // Start countdown
+  let remaining = DEMO_DURATION;
+  updateDemoTimer(remaining);
+  demoTimerInterval = setInterval(()=>{
+    remaining--;
+    updateDemoTimer(remaining);
+    // Turn banner orange-red in last 2 minutes
+    if(remaining <= 120){
+      document.getElementById('demo-banner').style.background = 'linear-gradient(135deg,#fee2e2,#fecaca)';
+      document.getElementById('demo-banner').style.borderColor = 'var(--red)';
+      document.getElementById('demo-banner').style.color = '#b91c1c';
+    }
+    if(remaining <= 0){
+      clearInterval(demoTimerInterval);
+      demoTimerInterval = null;
+      localStorage.setItem(DEMO_EXPIRED_KEY, '1');
+      showDemoExpired();
+    }
+  }, 1000);
+};
+
+function updateDemoTimer(secs){
+  const m = Math.floor(secs/60);
+  const s = secs % 60;
+  const el = document.getElementById('demo-timer');
+  if(el) el.textContent = `${m}:${String(s).padStart(2,'0')}`;
+}
+
+function showDemoExpired(){
+  // Stop all interaction
+  document.getElementById('demo-expired-modal').classList.remove('hidden');
+  isDemoMode = false;
+}
+
+function showDemoExpiredLocked(){
+  // Show on auth screen directly
+  const btn = document.getElementById('demo-btn');
+  const hint = document.getElementById('demo-hint');
+  if(btn){
+    btn.disabled = true;
+    btn.style.opacity = '0.4';
+    btn.style.cursor = 'not-allowed';
+    btn.textContent = '🔒 Demo bereits genutzt';
+  }
+  if(hint) hint.textContent = 'Du hast die Demo bereits verwendet. Registriere dich kostenlos!';
+}
+
+window.goToRegisterFromDemo = () => {
+  document.getElementById('demo-expired-modal').classList.add('hidden');
+  document.getElementById('app-screen').style.display = 'none';
+  document.getElementById('auth-screen').style.display = 'flex';
+  pantry={}; recipes={}; shoppingList={}; weekPlan={};
+  switchAuthTab('register');
+};
+
+window.goToLoginFromDemo = () => {
+  document.getElementById('demo-expired-modal').classList.add('hidden');
+  document.getElementById('app-screen').style.display = 'none';
+  document.getElementById('auth-screen').style.display = 'flex';
+  pantry={}; recipes={}; shoppingList={}; weekPlan={};
+  switchAuthTab('login');
 };
 
 window.exitDemo = () => {
+  if(demoTimerInterval){ clearInterval(demoTimerInterval); demoTimerInterval=null; }
   isDemoMode = false;
   currentUser = null; familyId = null; familyData = null;
   pantry = {}; recipes = {}; shoppingList = {}; weekPlan = {};
   document.getElementById('app-screen').style.display = 'none';
   document.getElementById('demo-banner').classList.add('hidden');
+  document.getElementById('demo-banner').style.background = '';
+  document.getElementById('demo-banner').style.borderColor = '';
+  document.getElementById('demo-banner').style.color = '';
   document.getElementById('auth-screen').style.display = 'flex';
 };
 
