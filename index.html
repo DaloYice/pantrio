@@ -1912,6 +1912,11 @@ function loadApp(){
         update(ref(db,`users/${currentUser.uid}/families`), { [familyId]:{ name, role } });
       });
     });
+
+    // Seed starter recipes if family has none yet
+    get(ref(db,`families/${familyId}/recipes`)).then(snap=>{
+      if(!snap.exists()) seedStarterRecipes(familyId);
+    });
   }
 
   listenFamily(); listenPantry(); listenRecipes(); listenShopping(); listenWeekPlan();
