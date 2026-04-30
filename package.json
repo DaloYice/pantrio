@@ -1,0 +1,14 @@
+{
+  "name": "pantrio-tests",
+  "version": "0.0.1",
+  "private": true,
+  "description": "Security-Rules unit tests for the pantrio Firebase RTDB.",
+  "scripts": {
+    "test": "firebase emulators:exec --only database \"mocha --timeout 10000 tests/rules.spec.js\""
+  },
+  "devDependencies": {
+    "@firebase/rules-unit-testing": "^3.0.4",
+    "firebase-tools": "^13.20.0",
+    "mocha": "^10.7.3"
+  }
+}
