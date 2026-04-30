@@ -1778,7 +1778,10 @@ window.register = async()=>{
   }catch(e){ authErr(friendlyErr(e.code)); }
 };
 
-window.logout = async()=>{ await signOut(auth); };
+window.logout = async()=>{
+  document.querySelectorAll('.modal-overlay').forEach(m=>m.classList.add('hidden'));
+  await signOut(auth);
+};
 
 function friendlyErr(c){
   return {'auth/invalid-credential':'E-Mail oder Passwort falsch','auth/email-already-in-use':'E-Mail bereits registriert','auth/weak-password':'Passwort zu schwach','auth/invalid-email':'Ungültige E-Mail'}[c]||'Fehler: '+c;
