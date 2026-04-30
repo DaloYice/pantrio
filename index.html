@@ -1283,6 +1283,23 @@ hr { border: none; border-top: 1px solid var(--border); margin: 16px 0; }
 
     <div id="add-pantry-form" class="add-pantry-form hidden">
       <h4>Zutat hinzufügen</h4>
+
+      <!-- Ingredient search from recipes -->
+      <div class="form-group" style="margin-bottom:12px">
+        <label>Aus Rezepten suchen</label>
+        <div style="position:relative">
+          <input type="text" id="p-search" placeholder="z.B. Nudeln, Tomaten…" oninput="searchPantryIngredients(this.value)" autocomplete="off" style="padding-right:36px">
+          <svg style="position:absolute;right:12px;top:50%;transform:translateY(-50%);color:var(--text2);width:16px;height:16px;pointer-events:none" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z"/></svg>
+        </div>
+        <div id="p-search-results" class="hidden" style="background:var(--surface);border:2px solid var(--green);border-radius:10px;margin-top:4px;max-height:200px;overflow-y:auto;box-shadow:var(--shadow)"></div>
+      </div>
+
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+        <div style="flex:1;height:1px;background:var(--border)"></div>
+        <span style="font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase">oder manuell</span>
+        <div style="flex:1;height:1px;background:var(--border)"></div>
+      </div>
+
       <div class="add-form-grid2">
         <div class="form-group" style="margin:0">
           <label>Emoji</label>
@@ -1659,6 +1676,14 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('reg-name').addEventListener('keydown', e => { if(e.key==='Enter') document.getElementById('reg-email').focus(); });
   document.getElementById('reg-email').addEventListener('keydown', e => { if(e.key==='Enter') document.getElementById('reg-password').focus(); });
   document.getElementById('forgot-email').addEventListener('keydown', e => { if(e.key==='Enter') window.resetPassword(); });
+
+  // Close pantry ingredient search on outside click
+  document.addEventListener('click', e => {
+    const results = document.getElementById('p-search-results');
+    if(results && !results.contains(e.target) && e.target.id !== 'p-search'){
+      results.classList.add('hidden');
+    }
+  });
 });
 
 // ─── STATE ───
@@ -2305,7 +2330,70 @@ function listenPantry(){
 window.toggleAddPantryForm=()=>{
   const f=document.getElementById('add-pantry-form');
   f.classList.toggle('hidden');
-  if(!f.classList.contains('hidden')) document.getElementById('p-name').focus();
+  if(!f.classList.contains('hidden')){
+    document.getElementById('p-search').value='';
+    document.getElementById('p-search-results').classList.add('hidden');
+    document.getElementById('p-name').value='';
+    document.getElementById('p-emoji').value='';
+    document.getElementById('p-amount').value='';
+    document.getElementById('p-unit').value='';
+    document.getElementById('p-search').focus();
+  }
+};
+
+window.searchPantryIngredients=(query)=>{
+  const results = document.getElementById('p-search-results');
+  if(!query.trim()){ results.classList.add('hidden'); return; }
+
+  // Collect all unique ingredients from all recipes
+  const seen = new Set();
+  const matches = [];
+  const q = query.toLowerCase().trim();
+
+  // Already in pantry names for duplicate indicator
+  const pantryNames = new Set(Object.values(pantry).map(p=>p.name.toLowerCase().trim()));
+
+  Object.values(recipes).forEach(recipe=>{
+    (recipe.ingredients||[]).forEach(ing=>{
+      if(!ing.name) return;
+      const key = ing.name.toLowerCase().trim();
+      if(seen.has(key)) return;
+      if(!key.includes(q)) return;
+      seen.add(key);
+      matches.push({ name:ing.name, unit:ing.unit||'', recipe:recipe.name, emoji:recipe.emoji||'📦', alreadyInPantry: pantryNames.has(key) });
+    });
+  });
+
+  if(matches.length===0){
+    results.innerHTML=`<div style="padding:12px 14px;font-size:13px;color:var(--text2)">Keine Treffer – manuell eingeben</div>`;
+    results.classList.remove('hidden');
+    return;
+  }
+
+  results.innerHTML = matches.slice(0,8).map(m=>`
+    <div onclick="selectPantryIngredient(${JSON.stringify(m).replace(/"/g,'&quot;')})"
+      style="padding:11px 14px;display:flex;align-items:center;gap:10px;cursor:pointer;border-bottom:1px solid var(--border);transition:background 0.1s"
+      onmouseover="this.style.background='var(--surface2)'" onmouseout="this.style.background=''">
+      <span style="font-size:22px">${m.emoji}</span>
+      <div style="flex:1">
+        <div style="font-weight:600;font-size:14px">${m.name} ${m.alreadyInPantry?'<span style="font-size:10px;background:var(--green-light);color:var(--green);padding:1px 6px;border-radius:10px;font-weight:700">schon vorhanden</span>':''}</div>
+        <div style="font-size:11px;color:var(--text2)">aus ${m.recipe}${m.unit?' · '+m.unit:''}</div>
+      </div>
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="var(--green)"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>
+    </div>
+  `).join('');
+  results.classList.remove('hidden');
+};
+
+window.selectPantryIngredient=(ing)=>{
+  // Fill the manual form fields
+  document.getElementById('p-name').value = ing.name;
+  document.getElementById('p-unit').value = ing.unit||'';
+  document.getElementById('p-search').value = ing.name;
+  document.getElementById('p-search-results').classList.add('hidden');
+  // Scroll to and focus amount field
+  document.getElementById('p-amount').focus();
+  document.getElementById('p-amount').scrollIntoView({behavior:'smooth',block:'nearest'});
 };
 
 window.savePantryItem=async()=>{
@@ -2720,12 +2808,80 @@ window.toggleShopItem=(key)=>{
   update(ref(db,`families/${familyId}/shoppingList/${key}`),{checked:!item.checked});
 };
 
-window.clearCheckedItems=()=>{
-  const upd={};
-  Object.entries(shoppingList).forEach(([k,v])=>{ if(!v.checked) upd[k]=v; });
-  if(isDemoMode){ shoppingList=upd; renderShopping(); return; }
-  set(ref(db,`families/${familyId}/shoppingList`),upd);
+window.clearCheckedItems=async()=>{
+  const checked = Object.entries(shoppingList).filter(([,v])=>v.checked);
+  const unchecked = Object.entries(shoppingList).filter(([,v])=>!v.checked);
+
+  if(checked.length === 0) return;
+
+  // Map shopping categories to pantry categories
+  const catMap = {
+    'Hauptgericht':'Trockenwaren','Vorspeise':'Trockenwaren','Frühstück':'Trockenwaren',
+    'Snack':'Trockenwaren','Backen':'Trockenwaren','Sonstiges':'Sonstiges',
+    'Gemüse & Obst':'Gemüse & Obst','Fleisch & Fisch':'Fleisch & Fisch',
+    'Milchprodukte':'Milchprodukte','Trockenwaren':'Trockenwaren',
+    'Konserven':'Konserven','Gewürze':'Gewürze','Getränke':'Getränke'
+  };
+
+  // Add checked items to pantry
+  const pantryUpdates = {};
+  checked.forEach(([,item])=>{
+    if(!item.name) return;
+    const key = 'shop_' + item.name.toLowerCase().replace(/[^a-z0-9äöüß]/g,'_') + '_' + Date.now();
+    pantryUpdates[key] = {
+      name: item.name,
+      emoji: '📦',
+      category: catMap[item.category] || 'Sonstiges',
+      amount: item.amount || null,
+      unit: item.unit || null,
+      status: 'ok',
+      addedAt: Date.now(),
+      addedFrom: 'Einkaufsliste'
+    };
+  });
+
+  const newList = {};
+  unchecked.forEach(([k,v])=>{ newList[k]=v; });
+
+  if(isDemoMode){
+    Object.assign(pantry, pantryUpdates);
+    shoppingList = newList;
+    renderShopping();
+    renderPantry();
+    renderHome();
+    renderRecipes();
+    showPantryToast(checked.length);
+    return;
+  }
+
+  // Write pantry + shopping list in parallel
+  const pantryRef = ref(db, `families/${familyId}/pantry`);
+  await Promise.all([
+    ...Object.entries(pantryUpdates).map(([k,v]) => set(ref(db, `families/${familyId}/pantry/${k}`), v)),
+    set(ref(db, `families/${familyId}/shoppingList`), newList)
+  ]);
+  showPantryToast(checked.length);
 };
+
+function showPantryToast(count){
+  // Remove existing toast if any
+  const existing = document.getElementById('pantry-toast');
+  if(existing) existing.remove();
+
+  const toast = document.createElement('div');
+  toast.id = 'pantry-toast';
+  toast.style.cssText = `
+    position:fixed; bottom:90px; left:50%; transform:translateX(-50%);
+    background:var(--green); color:white; padding:12px 20px;
+    border-radius:12px; font-size:14px; font-weight:600;
+    box-shadow:0 4px 20px rgba(39,174,96,0.4);
+    z-index:300; white-space:nowrap;
+    animation:slideUp 0.3s ease;
+  `;
+  toast.textContent = `✅ ${count} Artikel in den Vorrat übernommen`;
+  document.body.appendChild(toast);
+  setTimeout(()=>{ toast.style.opacity='0'; toast.style.transition='opacity 0.4s'; setTimeout(()=>toast.remove(), 400); }, 3000);
+}
 
 window.clearAllShopping=()=>{
   if(!confirm('Einkaufsliste wirklich leeren?')) return;
