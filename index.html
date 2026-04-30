@@ -1530,7 +1530,27 @@ hr { border: none; border-top: 1px solid var(--border); margin: 16px 0; }
   </nav>
 </div>
 
-<!-- MODAL: Invite -->
+<!-- MODAL: Login Lockout -->
+<div id="lockout-modal" class="modal-overlay hidden">
+  <div class="modal" style="text-align:center;max-width:320px;margin:auto;border-radius:24px">
+    <div style="font-size:48px;margin-bottom:12px">🔒</div>
+    <h3 style="margin-bottom:8px">Zu viele Fehlversuche</h3>
+    <p style="margin-bottom:20px">Bitte warte kurz bevor du es erneut versuchst.</p>
+    <div style="position:relative;width:120px;height:120px;margin:0 auto 20px">
+      <svg width="120" height="120" style="transform:rotate(-90deg)">
+        <circle cx="60" cy="60" r="52" fill="none" stroke="var(--border)" stroke-width="8"/>
+        <circle id="lockout-circle" cx="60" cy="60" r="52" fill="none" stroke="var(--red)" stroke-width="8"
+          stroke-dasharray="327" stroke-dashoffset="0"
+          style="transition:stroke-dashoffset 1s linear;stroke-linecap:round"/>
+      </svg>
+      <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column">
+        <div id="lockout-seconds" style="font-family:'Fraunces',serif;font-size:36px;font-weight:900;color:var(--red);line-height:1">30</div>
+        <div style="font-size:11px;color:var(--text2);font-weight:600;text-transform:uppercase;letter-spacing:0.5px">Sekunden</div>
+      </div>
+    </div>
+    <p style="font-size:13px;color:var(--text2);margin-bottom:0">Das Fenster schließt sich automatisch.</p>
+  </div>
+</div>
 <div id="invite-modal" class="modal-overlay hidden" onclick="closeModal('invite-modal')">
   <div class="modal" onclick="event.stopPropagation()">
     <div class="modal-handle"></div>
@@ -1816,11 +1836,11 @@ function authErr(msg){ const e=document.getElementById('auth-error'); e.textCont
 
 // ─── RATE LIMITING ───
 const loginAttempts = { count:0, lockedUntil:0 };
+let lockoutTimer = null;
 
 function checkRateLimit(){
   if(Date.now() < loginAttempts.lockedUntil){
-    const secs = Math.ceil((loginAttempts.lockedUntil - Date.now()) / 1000);
-    authErr(`Zu viele Versuche. Bitte ${secs}s warten.`);
+    showLockoutModal();
     return false;
   }
   return true;
@@ -1828,11 +1848,73 @@ function checkRateLimit(){
 
 function trackFailedLogin(){
   loginAttempts.count++;
+  const remaining = 5 - loginAttempts.count;
   if(loginAttempts.count >= 5){
-    loginAttempts.lockedUntil = Date.now() + 30000; // 30s lockout
+    loginAttempts.lockedUntil = Date.now() + 30000;
     loginAttempts.count = 0;
-    authErr('Zu viele Fehlversuche. Bitte 30 Sekunden warten.');
+    showLockoutModal();
+  } else {
+    const e = document.getElementById('auth-error');
+    e.textContent = `E-Mail oder Passwort falsch – noch ${remaining} Versuch${remaining===1?'':'e'} bis zur Sperre.`;
+    e.classList.remove('hidden');
+    // Get more urgent visually as attempts increase
+    if(remaining === 1){
+      e.style.background = '#fee2e2';
+      e.style.color = '#b91c1c';
+      e.style.fontWeight = '700';
+      e.style.border = '1.5px solid #fca5a5';
+    } else if(remaining === 2){
+      e.style.background = '#fff3cd';
+      e.style.color = '#92400e';
+      e.style.fontWeight = '600';
+      e.style.border = '1.5px solid #fcd34d';
+    } else {
+      e.style.background = '';
+      e.style.color = '';
+      e.style.fontWeight = '';
+      e.style.border = '';
+    }
   }
+}
+
+function showLockoutModal(){
+  const modal = document.getElementById('lockout-modal');
+  const secsEl = document.getElementById('lockout-seconds');
+  const circle = document.getElementById('lockout-circle');
+  const totalSecs = 30;
+  const circumference = 327; // 2 * π * 52
+
+  modal.classList.remove('hidden');
+
+  // Disable login inputs
+  document.getElementById('login-email').disabled = true;
+  document.getElementById('login-password').disabled = true;
+  document.querySelector('#login-form .btn-primary').disabled = true;
+  document.querySelector('#login-form .btn-primary').style.opacity = '0.5';
+
+  if(lockoutTimer) clearInterval(lockoutTimer);
+
+  lockoutTimer = setInterval(()=>{
+    const remaining = Math.max(0, Math.ceil((loginAttempts.lockedUntil - Date.now()) / 1000));
+    secsEl.textContent = remaining;
+    // Animate circle: goes from full to empty
+    const progress = remaining / totalSecs;
+    circle.style.strokeDashoffset = circumference * (1 - progress);
+
+    if(remaining <= 0){
+      clearInterval(lockoutTimer);
+      lockoutTimer = null;
+      modal.classList.add('hidden');
+      // Re-enable inputs
+      document.getElementById('login-email').disabled = false;
+      document.getElementById('login-password').disabled = false;
+      document.getElementById('login-password').value = '';
+      document.getElementById('login-password').focus();
+      document.querySelector('#login-form .btn-primary').disabled = false;
+      document.querySelector('#login-form .btn-primary').style.opacity = '1';
+      document.getElementById('auth-error').classList.add('hidden');
+    }
+  }, 200);
 }
 
 // ─── INPUT SANITIZATION ───
