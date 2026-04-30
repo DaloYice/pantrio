@@ -1,0 +1,27 @@
+{
+  "rules": {
+    "users": {
+      "$uid": {
+        ".read": "$uid === auth.uid",
+        ".write": "$uid === auth.uid"
+      }
+    },
+    "families": {
+      "$familyId": {
+        ".read": "auth != null && data.child('members').child(auth.uid).exists()",
+        ".write": "auth != null && (data.child('members').child(auth.uid).exists() || !data.exists())",
+        "members": {
+          "$memberId": {
+            ".write": "auth != null && (data.parent().parent().child('members').child(auth.uid).child('role').val() === 'admin' || (auth.uid === $memberId && !data.exists() && newData.child('joinCode').isString() && root.child('familyCodes').child(newData.child('joinCode').val()).val() === $familyId))"
+          }
+        }
+      }
+    },
+    "familyCodes": {
+      "$code": {
+        ".read": "auth != null",
+        ".write": "auth != null && !data.exists() && newData.isString() && root.child('families').child(newData.val()).child('members').child(auth.uid).child('role').val() === 'admin'"
+      }
+    }
+  }
+}
