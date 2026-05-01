@@ -1,4 +1,5 @@
 :root {
+  /* === Color === */
   --green: #27AE60;
   --green-light: #d4edda;
   --green-mid: #a8d5b8;
@@ -12,11 +13,68 @@
   --orange: #F59E0B;
   --orange-light: #fef3c7;
   --border: #e8e2d6;
+
+  /* === Spacing (4px-Grid) === */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+
+  /* === Type Scale === */
+  --text-xs:   12px;
+  --text-sm:   14px;
+  --text-base: 16px;
+  --text-md:   18px;
+  --text-lg:   22px;
+  --text-xl:   28px;
+  --text-2xl:  36px;
+  --text-3xl:  48px;
+
+  /* === Font Weight === */
+  --fw-medium:   500;
+  --fw-semibold: 600;
+  --fw-bold:     700;
+  --fw-black:    900;
+
+  /* === Radii === */
+  --radius-sm:   8px;
+  --radius:     18px;       /* Legacy alias kept for transition */
+  --radius-md:  12px;
+  --radius-lg:  18px;
+  --radius-xl:  24px;
+  --radius-pill: 9999px;
+
+  /* === Shadows === */
   --shadow-sm: 0 2px 8px rgba(31,41,51,0.07);
-  --shadow: 0 4px 20px rgba(31,41,51,0.1);
+  --shadow:    0 4px 20px rgba(31,41,51,0.1);
   --shadow-lg: 0 12px 40px rgba(31,41,51,0.14);
-  --radius: 18px;
-  --radius-sm: 10px;
+
+  /* === Motion === */
+  --duration-fast:   150ms;
+  --duration-normal: 200ms;
+  --duration-slow:   320ms;
+  --ease-standard:  cubic-bezier(0.2, 0, 0, 1);
+
+  /* === Z-Index === */
+  --z-content:  1;
+  --z-sticky:  100;
+  --z-modal:  1000;
+  --z-toast:  2000;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
