@@ -77,6 +77,71 @@
   }
 }
 
+/* === A11y helpers === */
+.btn-reset {
+  background: none;
+  border: 0;
+  padding: 0;
+  margin: 0;
+  font: inherit;
+  color: inherit;
+  text-align: inherit;
+  cursor: pointer;
+  display: block;
+  width: 100%;
+}
+.btn-reset:focus-visible,
+button:focus-visible,
+a:focus-visible,
+[role="button"]:focus-visible {
+  outline: 2px solid var(--green);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0,0,0,0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* === Empty states === */
+.empty-state {
+  padding: var(--space-8) var(--space-4);
+  text-align: center;
+  color: var(--text2);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+}
+.empty-state-emoji { font-size: var(--text-2xl); line-height: 1; }
+.empty-state-title {
+  font-size: var(--text-md);
+  font-weight: var(--fw-semibold);
+  color: var(--text);
+  margin: 0;
+}
+.empty-state-text {
+  font-size: var(--text-sm);
+  max-width: 32ch;
+  line-height: 1.5;
+  margin: 0;
+}
+.empty-state .btn { margin-top: var(--space-2); }
+.empty-state-actions {
+  display: flex;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-top: var(--space-2);
+}
+
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
 body {
