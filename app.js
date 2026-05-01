@@ -1849,6 +1849,17 @@ window.showPage=(id)=>{
 
 window.closeModal=(id)=>document.getElementById(id).classList.add('hidden');
 
+// Global Escape-key handler: closes the topmost dismissable modal.
+// Skips lockout/demo-expired which are intentionally modal-by-design.
+document.addEventListener('keydown', (e) => {
+  if (e.key !== 'Escape') return;
+  const dismissable = ['day-recipe-modal','recipe-shop-modal','invite-modal','family-switcher-modal'];
+  for (const id of dismissable) {
+    const el = document.getElementById(id);
+    if (el && !el.classList.contains('hidden')) { el.classList.add('hidden'); break; }
+  }
+});
+
 window.showInviteModal=()=>{
   document.getElementById('modal-code').textContent=familyData?.code||'–';
   document.getElementById('invite-modal').classList.remove('hidden');
