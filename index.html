@@ -2436,6 +2436,8 @@ function loadApp(){
 
   listenFamily(); listenPantry(); listenRecipes(); listenShopping(); listenWeekPlan(); listenStaples();
   buildWeekGrid();
+  // Ensure the "Meine Familien" list on the family page is fresh, not stale, on first load.
+  loadAllUserFamilies().then(()=>renderAllFamiliesList()).catch(()=>{});
 }
 
 function updateGreeting(){
@@ -2487,10 +2489,36 @@ window.rotateInviteCode = async() => {
 
 async function loadAllUserFamilies(){
   const snap = await get(ref(db,`users/${currentUser.uid}/families`));
-  allUserFamilies = snap.exists() ? snap.val() : {};
-  // Also include current family in case it's only stored as familyId (legacy)
+  const cached = snap.exists() ? snap.val() : {};
+  const validated = {};
+  // Validate each cached entry against actual membership and self-heal stale entries.
+  // Reads on /families/<fid> are blocked by RTDB rules unless we are members,
+  // so a failing get() / missing member is the signal to drop the entry.
+  await Promise.all(Object.keys(cached).map(async fid => {
+    try{
+      const fs = await get(ref(db,`families/${fid}`));
+      const member = fs.exists() ? fs.val()?.members?.[currentUser.uid] : null;
+      if(member){
+        validated[fid] = {
+          name: fs.val().name || cached[fid].name || 'Familie',
+          role: member.role || cached[fid].role || 'member'
+        };
+      } else {
+        // not a member anymore – clean up stale cache entry
+        try{ await remove(ref(db,`users/${currentUser.uid}/families/${fid}`)); }catch(_){ }
+      }
+    } catch(_){
+      // permission denied → not a member → drop cache entry
+      try{ await remove(ref(db,`users/${currentUser.uid}/families/${fid}`)); }catch(_){ }
+    }
+  }));
+  allUserFamilies = validated;
+  // Always include the currently-active family (covers legacy users that only have familyId).
   if(familyId && !allUserFamilies[familyId]){
-    allUserFamilies[familyId] = { name: familyData?.name||'Familie', role:'member' };
+    allUserFamilies[familyId] = {
+      name: familyData?.name || 'Familie',
+      role: familyData?.members?.[currentUser.uid]?.role || 'member'
+    };
   }
 }
 
