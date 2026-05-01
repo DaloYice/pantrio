@@ -36,11 +36,11 @@
     <div id="login-form">
       <div class="form-group">
         <label>E-Mail</label>
-        <input type="email" id="login-email" placeholder="mail@beispiel.de">
+        <input type="email" id="login-email" placeholder="mail@beispiel.de" autocomplete="email" inputmode="email" required>
       </div>
       <div class="form-group">
         <label>Passwort</label>
-        <input type="password" id="login-password" placeholder="••••••••">
+        <input type="password" id="login-password" placeholder="••••••••" autocomplete="current-password" required>
       </div>
       <button class="btn btn-primary" onclick="login()">Anmelden</button>
       <button class="btn btn-ghost" style="width:100%;margin-top:8px;font-size:13px" onclick="switchAuthTab('forgot')">Passwort vergessen?</button>
@@ -58,15 +58,15 @@
     <div id="register-form" class="hidden">
       <div class="form-group">
         <label>Name</label>
-        <input type="text" id="reg-name" placeholder="Dein Name">
+        <input type="text" id="reg-name" placeholder="Dein Name" autocomplete="name" required>
       </div>
       <div class="form-group">
         <label>E-Mail</label>
-        <input type="email" id="reg-email" placeholder="mail@beispiel.de">
+        <input type="email" id="reg-email" placeholder="mail@beispiel.de" autocomplete="email" inputmode="email" required>
       </div>
       <div class="form-group">
         <label>Passwort</label>
-        <input type="password" id="reg-password" placeholder="min. 8 Zeichen" oninput="checkPasswordStrength(this.value)">
+        <input type="password" id="reg-password" placeholder="min. 8 Zeichen" autocomplete="new-password" required minlength="8" oninput="checkPasswordStrength(this.value)">
         <div id="pw-strength-bar" style="height:4px;border-radius:4px;margin-top:6px;background:var(--border);overflow:hidden">
           <div id="pw-strength-fill" style="height:100%;width:0%;border-radius:4px;transition:all 0.3s"></div>
         </div>
@@ -79,7 +79,7 @@
       <p style="font-size:14px;color:var(--text2);margin-bottom:16px">Gib deine E-Mail ein – wir schicken dir einen Link zum Zurücksetzen.</p>
       <div class="form-group">
         <label>E-Mail</label>
-        <input type="email" id="forgot-email" placeholder="mail@beispiel.de">
+        <input type="email" id="forgot-email" placeholder="mail@beispiel.de" autocomplete="email" inputmode="email" required>
       </div>
       <div id="forgot-success" class="success-msg hidden">E-Mail gesendet! Bitte prüfe deinen Posteingang.</div>
       <div style="display:flex;gap:10px">
@@ -151,7 +151,7 @@
         letter-spacing: 1px;
         border: 2px solid #F59E0B;
       ">⏱ <span id="demo-timer">10:00</span></div>
-      <div class="pantry-badge" onclick="showPage('pantry-page')" id="pantry-count-badge">0 Vorräte</div>
+      <button type="button" class="pantry-badge btn-reset" onclick="showPage('pantry-page')" id="pantry-count-badge" aria-label="Zum Vorrat wechseln">0 Vorräte</button>
       <button class="family-switcher-btn" onclick="openFamilySwitcher()" id="family-switcher-btn">
         <span id="topbar-family-name">Familie</span>
         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5"/></svg>
@@ -175,26 +175,26 @@
       <h2 id="home-greeting-text">Guten Morgen! <br><em>Was kochst du heute?</em></h2>
     </div>
     <div class="home-cards">
-      <div class="home-card green" onclick="showPage('pantry-page')">
-        <div class="card-icon">🥕</div>
+      <button type="button" class="home-card green btn-reset" onclick="showPage('pantry-page')" aria-label="Zum Vorrat wechseln">
+        <div class="card-icon" aria-hidden="true">🥕</div>
         <div class="card-num" id="hc-pantry">0</div>
         <div class="card-label">Vorräte</div>
-      </div>
-      <div class="home-card orange" onclick="showPage('recipes-page')">
-        <div class="card-icon">📖</div>
+      </button>
+      <button type="button" class="home-card orange btn-reset" onclick="showPage('recipes-page')" aria-label="Zu den Rezepten wechseln">
+        <div class="card-icon" aria-hidden="true">📖</div>
         <div class="card-num" id="hc-recipes">0</div>
         <div class="card-label">Rezepte</div>
-      </div>
-      <div class="home-card red" onclick="showPage('shopping-page')">
-        <div class="card-icon">🛒</div>
+      </button>
+      <button type="button" class="home-card red btn-reset" onclick="showPage('shopping-page')" aria-label="Zur Einkaufsliste wechseln">
+        <div class="card-icon" aria-hidden="true">🛒</div>
         <div class="card-num" id="hc-shopping">0</div>
         <div class="card-label">Einkauf</div>
-      </div>
-      <div class="home-card blue" onclick="showPage('week-page')">
-        <div class="card-icon">📅</div>
+      </button>
+      <button type="button" class="home-card blue btn-reset" onclick="showPage('week-page')" aria-label="Zum Wochenplan wechseln">
+        <div class="card-icon" aria-hidden="true">📅</div>
         <div class="card-num" id="hc-week">0</div>
         <div class="card-label">Wochenplan</div>
-      </div>
+      </button>
     </div>
 
     <div class="section-title">
@@ -533,8 +533,8 @@
 
 <!-- MODAL: Login Lockout -->
 <div id="lockout-modal" class="modal-overlay hidden">
-  <div class="modal" style="text-align:center;max-width:320px;margin:auto;border-radius:24px">
-    <div style="font-size:48px;margin-bottom:12px">🔒</div>
+  <div class="modal" role="alertdialog" aria-modal="true" aria-labelledby="lockout-title" tabindex="-1" style="text-align:center;max-width:320px;margin:auto;border-radius:24px">
+    <div style="font-size:48px;margin-bottom:12px" aria-hidden="true">🔒</div>
     <h3 style="margin-bottom:8px">Zu viele Fehlversuche</h3>
     <p style="margin-bottom:20px">Bitte warte kurz bevor du es erneut versuchst.</p>
     <div style="position:relative;width:120px;height:120px;margin:0 auto 20px">
@@ -553,7 +553,7 @@
   </div>
 </div>
 <div id="invite-modal" class="modal-overlay hidden" onclick="closeModal('invite-modal')">
-  <div class="modal" onclick="event.stopPropagation()">
+  <div class="modal" role="dialog" aria-modal="true" tabindex="-1" onclick="event.stopPropagation()">
     <div class="modal-handle"></div>
     <h3>Einladungscode</h3>
     <p>Teile diesen Code – damit können Familienmitglieder beitreten.</p>
@@ -567,7 +567,7 @@
 
 <!-- MODAL: Family Switcher -->
 <div id="family-switcher-modal" class="modal-overlay hidden" onclick="closeModal('family-switcher-modal')">
-  <div class="modal" onclick="event.stopPropagation()">
+  <div class="modal" role="dialog" aria-modal="true" tabindex="-1" onclick="event.stopPropagation()">
     <div class="modal-handle"></div>
     <h3>Familie wechseln</h3>
     <p>Wähle eine Familie oder füge eine neue hinzu.</p>
@@ -609,9 +609,9 @@
 
 <!-- MODAL: Demo Expired -->
 <div id="demo-expired-modal" class="modal-overlay hidden">
-  <div class="modal" style="text-align:center;max-width:360px;margin:auto;border-radius:24px">
-    <div style="font-size:52px;margin-bottom:12px">⏰</div>
-    <h3 style="margin-bottom:8px">Demo-Zeit abgelaufen</h3>
+  <div class="modal" role="alertdialog" aria-modal="true" aria-labelledby="demo-expired-title" tabindex="-1" style="text-align:center;max-width:360px;margin:auto;border-radius:24px">
+    <div style="font-size:52px;margin-bottom:12px" aria-hidden="true">⏰</div>
+    <h3 id="demo-expired-title" style="margin-bottom:8px">Demo-Zeit abgelaufen</h3>
     <p style="margin-bottom:24px">Du hast die 10 Minuten Demo genutzt. Erstelle jetzt ein kostenloses Konto um Pantrio dauerhaft zu verwenden – alle Funktionen bleiben erhalten!</p>
     <button class="btn btn-primary" onclick="goToRegisterFromDemo()" style="margin-bottom:10px">✨ Jetzt kostenlos registrieren</button>
     <button class="btn btn-ghost" style="width:100%;font-size:13px" onclick="goToLoginFromDemo()">Ich habe bereits ein Konto</button>
@@ -620,7 +620,7 @@
 
 <!-- MODAL: Add recipe to shopping -->
 <div id="recipe-shop-modal" class="modal-overlay hidden" onclick="closeModal('recipe-shop-modal')">
-  <div class="modal" onclick="event.stopPropagation()">
+  <div class="modal" role="dialog" aria-modal="true" tabindex="-1" onclick="event.stopPropagation()">
     <div class="modal-handle"></div>
     <h3>Rezept zur Einkaufsliste</h3>
     <p>Wähle ein Rezept – fehlende Zutaten werden automatisch hinzugefügt.</p>
@@ -636,7 +636,7 @@
 
 <!-- MODAL: Add recipe to day -->
 <div id="day-recipe-modal" class="modal-overlay hidden" onclick="closeModal('day-recipe-modal')">
-  <div class="modal" onclick="event.stopPropagation()">
+  <div class="modal" role="dialog" aria-modal="true" tabindex="-1" onclick="event.stopPropagation()">
     <div class="modal-handle"></div>
     <h3 id="day-modal-title">Rezept wählen</h3>
     <p>Wähle ein Rezept für diesen Tag und diese Mahlzeit.</p>
