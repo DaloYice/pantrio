@@ -1,0 +1,17 @@
+{
+  "name": "Pantrio – Deine Küche denkt mit",
+  "short_name": "Pantrio",
+  "description": "Vorrat, Rezepte und Wochenplan für die ganze Familie.",
+  "lang": "de",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#FAF7F0",
+  "theme_color": "#27AE60",
+  "categories": ["food", "lifestyle", "productivity"],
+  "icons": [
+    { "src": "/icon.svg", "type": "image/svg+xml", "sizes": "any", "purpose": "any" },
+    { "src": "/icon.svg", "type": "image/svg+xml", "sizes": "any", "purpose": "maskable" }
+  ]
+}
