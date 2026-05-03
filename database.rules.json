@@ -12,7 +12,10 @@
         ".write": "auth != null && ((newData.exists() && (data.child('members').child(auth.uid).exists() || !data.exists())) || (!newData.exists() && data.exists() && data.child('members').child(auth.uid).child('role').val() === 'admin'))",
         "members": {
           "$memberId": {
-            ".write": "auth != null && (data.parent().parent().child('members').child(auth.uid).child('role').val() === 'admin' || (auth.uid === $memberId && !data.exists() && newData.child('joinCode').isString() && root.child('familyCodes').child(newData.child('joinCode').val()).val() === $familyId) || (auth.uid === $memberId && data.exists() && !newData.exists()))"
+            ".write": "auth != null && (data.parent().parent().child('members').child(auth.uid).child('role').val() === 'admin' || (auth.uid === $memberId && !data.exists() && newData.child('joinCode').isString() && root.child('familyCodes').child(newData.child('joinCode').val()).val() === $familyId) || (auth.uid === $memberId && data.exists() && !newData.exists()))",
+            "role": {
+              ".validate": "newData.isString() && (data.parent().parent().parent().child('members').child(auth.uid).child('role').val() === 'admin' || (auth.uid === $memberId && !data.exists()))"
+            }
           }
         }
       }
