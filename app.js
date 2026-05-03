@@ -1,4 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { initializeAppCheck, ReCaptchaV3Provider } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app-check.js";
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, updateProfile, sendEmailVerification, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 import { getDatabase, ref, set, get, push, onValue, update, remove } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 
@@ -7,6 +8,14 @@ const app = initializeApp({
   authDomain: "pantrio-de.firebaseapp.com",
   databaseURL: "https://pantrio-de-default-rtdb.europe-west1.firebasedatabase.app",
   projectId: "pantrio-de"
+});
+
+// App Check – verifies that requests come from this app, not from bots / stolen API key.
+// Site Key is public by design (reCAPTCHA convention); the secret is only stored in Firebase Console.
+// Must be initialized before getAuth / getDatabase so attached tokens reach all later requests.
+initializeAppCheck(app, {
+  provider: new ReCaptchaV3Provider('6Lfii9csAAAAAFT5tB43r5E2pTnh8EDCjWHbdBcj'),
+  isTokenAutoRefreshEnabled: true
 });
 
 const auth = getAuth(app);
