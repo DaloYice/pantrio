@@ -215,6 +215,50 @@ describe('pantrio – RTDB Security Rules', () => {
     });
   });
 
+  describe('Role-Escalation-Schutz', () => {
+    beforeEach(async () => {
+      await seed(async (db) => {
+        await db.ref('families/-fam1').set({
+          name: 'Familie A',
+          members: {
+            bob: { role: 'admin' },
+            alice: { role: 'member' },
+          },
+        });
+      });
+    });
+
+    it('blockt Self-Promotion: Member kann nicht eigene Rolle auf admin setzen', async () => {
+      await assertFails(
+        authed('alice').ref('families/-fam1/members/alice/role').set('admin')
+      );
+    });
+
+    it('blockt Self-Promotion via Member-Slot-Update', async () => {
+      await assertFails(
+        authed('alice').ref('families/-fam1/members/alice').update({ role: 'admin' })
+      );
+    });
+
+    it('blockt Self-Promotion via Family-Tree-Update', async () => {
+      await assertFails(
+        authed('alice').ref('families/-fam1/members/alice').set({ role: 'admin', name: 'Alice' })
+      );
+    });
+
+    it('erlaubt Admin, andere Members zu promoten', async () => {
+      await assertSucceeds(
+        authed('bob').ref('families/-fam1/members/alice/role').set('admin')
+      );
+    });
+
+    it('erlaubt Admin, sich selbst zu degradieren', async () => {
+      await assertSucceeds(
+        authed('bob').ref('families/-fam1/members/bob/role').set('member')
+      );
+    });
+  });
+
   describe('/users', () => {
     it('blockt Lesen fremder User-Profile', async () => {
       await seed(async (db) => {
