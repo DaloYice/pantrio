@@ -1589,7 +1589,7 @@ window.showDetail=(id)=>{
       `:''}
 
       <div class="detail-actions">
-        <button class="btn btn-primary btn-sm" onclick="addRecipeToShopDirect('${id}')">🛒 Zur Einkaufsliste</button>
+        <button class="btn btn-primary btn-sm" onclick="addRecipeToShopDirect('${id}')" ${missing.length===0?'disabled':''} title="${missing.length===0?'Alle Zutaten sind im Vorrat':'Nur fehlende Zutaten werden hinzugefügt'}">${missing.length===0?'🛒 Alles vorhanden':`🛒 ${missing.length} fehlende in den Korb`}</button>
         <button class="btn btn-outline btn-sm" onclick="editRecipe('${id}')">✏️ Bearbeiten</button>
         <button class="btn btn-red btn-sm" onclick="deleteRecipe('${id}')">🗑</button>
       </div>
@@ -1613,7 +1613,14 @@ window.deleteRecipe=async(id)=>{
 window.addRecipeToShopDirect=(id)=>{
   const r=recipes[id]; if(!r) return;
   const portions=parseInt(document.getElementById('d-val')?.textContent)||r.portions||4;
-  addIngsToShop(r,portions);
+  const missing = calcMissing(r);
+  if(missing.length === 0){
+    if(typeof showPantryToast === 'function'){ showPantryToast('Alle Zutaten sind bereits im Vorrat ✨'); }
+    else { alert('Alle Zutaten sind bereits im Vorrat.'); }
+    return;
+  }
+  const added = addIngsToShop(r, portions, true);
+  if(typeof showPantryToast === 'function'){ showPantryToast(`${added} fehlende Zutat${added===1?'':'en'} zur Einkaufsliste`); }
   showPage('shopping-page');
 };
 
@@ -1719,21 +1726,28 @@ function listenShopping(){
   });
 }
 
-function addIngsToShop(recipe, portions){
+function addIngsToShop(recipe, portions, missingOnly=false){
   const base=recipe.portions||4;
   const scale=portions/base;
   const updated={...shoppingList};
 
-  (recipe.ingredients||[]).forEach(ing=>{
+  // When called from a recipe detail action, only the ingredients that are NOT already in the pantry are useful.
+  const sourceIngs = missingOnly ? calcMissing(recipe) : (recipe.ingredients||[]);
+  let added = 0;
+
+  sourceIngs.forEach(ing=>{
     if(!ing.name) return;
     const key='r_'+ing.name.toLowerCase().replace(/[^a-z0-9äöüß]/g,'_');
     const amt=Math.round((ing.amount||0)*scale*10)/10;
     if(updated[key]){ updated[key].amount=Math.round((updated[key].amount+amt)*10)/10; }
     else{ updated[key]={ name:ing.name, amount:amt, unit:ing.unit||'', category:recipe.category||'Sonstiges', from:recipe.name, checked:false }; }
+    added++;
   });
 
   if(isDemoMode){ shoppingList=updated; renderShopping(); document.getElementById('hc-shopping').textContent=Object.values(shoppingList).filter(i=>!i.checked).length; }
   else set(ref(db,`families/${familyId}/shoppingList`),updated);
+
+  return added;
 }
 
 window.addManualShopItem=()=>{
