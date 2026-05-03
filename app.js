@@ -655,6 +655,24 @@ function listenFamily(){
     const isAdmin = familyData?.members?.[currentUser?.uid]?.role === 'admin';
     const rotBtn = document.getElementById('rotate-code-btn');
     if (rotBtn) rotBtn.style.display = isAdmin ? '' : 'none';
+    // Danger-Zone: members see "Leave", admins see "Delete"
+    const memberCount = Object.keys(familyData?.members||{}).length;
+    const leaveBtn = document.getElementById('leave-family-btn');
+    const deleteBtn = document.getElementById('delete-family-btn');
+    const hint = document.getElementById('danger-zone-hint');
+    if (leaveBtn && deleteBtn && hint) {
+      if (isAdmin) {
+        leaveBtn.classList.add('hidden');
+        deleteBtn.classList.remove('hidden');
+        hint.textContent = memberCount > 1
+          ? `Achtung: damit verlieren alle ${memberCount} Mitglieder den Zugriff auf Vorrat, Rezepte, Wochenplan und Einkaufsliste.`
+          : 'Diese Familie wird komplett entfernt. Diese Aktion kann nicht rückgängig gemacht werden.';
+      } else {
+        leaveBtn.classList.remove('hidden');
+        deleteBtn.classList.add('hidden');
+        hint.textContent = 'Du verlässt die Familie. Deine eigenen Daten in anderen Familien bleiben erhalten.';
+      }
+    }
     renderFamilyMembers();
     renderAllFamiliesList();
   });
@@ -679,6 +697,75 @@ window.rotateInviteCode = async() => {
     else { alert('Neuer Code: '+newCode); }
   } catch(e){
     alert('Code-Erneuerung fehlgeschlagen: '+(e?.message||e));
+  }
+};
+
+// Switches the active family to the first remaining one in the user's cache,
+// or back to the family-choice screen if none are left.
+async function switchToFirstAvailableFamilyOrChoice(){
+  await loadAllUserFamilies();
+  const remaining = Object.keys(allUserFamilies).filter(fid => fid !== familyId);
+  if (remaining.length > 0) {
+    await switchToFamily(remaining[0]);
+  } else {
+    familyId = null;
+    familyData = null;
+    pantry = {}; recipes = {}; shoppingList = {}; weekPlan = {};
+    document.getElementById('app-screen').style.display = 'none';
+    document.getElementById('family-screen').classList.remove('hidden');
+    showFamilyChoice();
+  }
+}
+
+window.leaveFamily = async() => {
+  if(!currentUser || !familyId || !familyData) return;
+  const role = familyData?.members?.[currentUser.uid]?.role;
+  if(role === 'admin'){
+    alert('Als Admin kannst du diese Familie nicht verlassen, sondern nur löschen.');
+    return;
+  }
+  if(!confirm(`„${familyData.name||'Familie'}" wirklich verlassen?\n\nDeine Beiträge in anderen Familien bleiben erhalten.`)) return;
+  try{
+    await remove(ref(db,`families/${familyId}/members/${currentUser.uid}`));
+    await remove(ref(db,`users/${currentUser.uid}/families/${familyId}`));
+    if(typeof showPantryToast === 'function'){ showPantryToast('Familie verlassen.'); }
+    await switchToFirstAvailableFamilyOrChoice();
+  } catch(e){
+    alert('Verlassen fehlgeschlagen: '+(e?.message||e));
+  }
+};
+
+window.deleteFamily = async() => {
+  if(!currentUser || !familyId || !familyData) return;
+  if(familyData?.members?.[currentUser.uid]?.role !== 'admin'){
+    alert('Nur Admins können die Familie löschen.');
+    return;
+  }
+  const memberCount = Object.keys(familyData?.members||{}).length;
+  const warning = memberCount > 1
+    ? `„${familyData.name||'Familie'}" mit ${memberCount} Mitgliedern wirklich UNWIDERRUFLICH löschen?\n\nAlle Vorräte, Rezepte, Wochenpläne und Einkaufslisten gehen verloren. Mitglieder verlieren den Zugriff sofort.`
+    : `„${familyData.name||'Familie'}" wirklich löschen?\n\nAlle Vorräte, Rezepte, Wochenpläne und Einkaufslisten gehen verloren.`;
+  if(!confirm(warning)) return;
+  // Second confirm – type the family name to confirm
+  const expected = familyData.name || 'Familie';
+  const typed = prompt(`Zur Bestätigung: tippe „${expected}" ein:`);
+  if(typed !== expected){
+    alert('Name stimmt nicht überein. Vorgang abgebrochen.');
+    return;
+  }
+  const oldCode = familyData.code;
+  const fid = familyId;
+  try{
+    // Order matters: code first (rule needs family with admin), then family, then own user-cache.
+    if(oldCode){
+      try{ await remove(ref(db,`familyCodes/${oldCode}`)); } catch(_){ /* code may not exist */ }
+    }
+    await remove(ref(db,`families/${fid}`));
+    await remove(ref(db,`users/${currentUser.uid}/families/${fid}`));
+    if(typeof showPantryToast === 'function'){ showPantryToast('Familie gelöscht.'); }
+    await switchToFirstAvailableFamilyOrChoice();
+  } catch(e){
+    alert('Löschen fehlgeschlagen: '+(e?.message||e));
   }
 };
 
