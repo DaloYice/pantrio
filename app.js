@@ -969,6 +969,9 @@ window.switchPantryTab=(tab)=>{
 };
 
 // ─── RENDER PANTRY (grouped by category) ───
+window.resetPantryFilter = () => { activePantryCategory='Alle'; renderPantry(''); };
+window.resetRecipeFilter = () => { activeRecipeFilter='Alle'; renderRecipes(''); };
+
 function renderPantry(search=''){
   const list=document.getElementById('pantry-list');
   const cats=new Set(['Alle']);
@@ -992,7 +995,12 @@ function renderPantry(search=''){
   document.getElementById('hc-pantry').textContent=total;
 
   if(items.length===0){
-    list.innerHTML=`<div class="empty-state"><div class="ei">🥕</div><h3>Noch keine Vorräte</h3><p>Füge Zutaten hinzu, die du zuhause hast.</p></div>`;
+    if(total===0){
+      list.innerHTML=`<div class="empty-state"><div class="ei" aria-hidden="true">🥕</div><h3>Dein Vorrat ist noch leer</h3><p>Trag ein, was du zuhause hast – damit Pantrio dir passende Rezepte vorschlagen kann.</p><div class="empty-state-actions"><button class="btn btn-primary" type="button" onclick="toggleAddPantryForm()">＋ Vorrat hinzufügen</button></div></div>`;
+    } else {
+      const hasFilter=activePantryCategory!=='Alle'||search;
+      list.innerHTML=`<div class="empty-state"><div class="ei" aria-hidden="true">🔍</div><h3>Nichts in dieser Kategorie</h3><p>Du hast Vorräte in anderen Kategorien.</p><div class="empty-state-actions"><button class="btn btn-ghost" type="button" onclick="resetPantryFilter()">Alle anzeigen</button></div></div>`;
+    }
     return;
   }
 
@@ -1297,7 +1305,12 @@ function renderRecipes(search=''){
 
   container.innerHTML='';
   if(items.length===0){
-    container.innerHTML=`<div class="empty-state"><div class="ei">📖</div><h3>Keine Rezepte</h3><p>Füge dein erstes Rezept hinzu!</p></div>`;
+    const total=Object.keys(recipes).length;
+    if(total===0){
+      container.innerHTML=`<div class="empty-state"><div class="ei" aria-hidden="true">📖</div><h3>Noch keine Rezepte</h3><p>Leg dein erstes Rezept an oder importiere ein paar Klassiker, um loszulegen.</p><div class="empty-state-actions"><button class="btn btn-primary" type="button" onclick="showAddRecipePage()">＋ Rezept hinzufügen</button></div></div>`;
+    } else {
+      container.innerHTML=`<div class="empty-state"><div class="ei" aria-hidden="true">🔍</div><h3>Nichts gefunden</h3><p>Keine Rezepte passen zu deinem Filter (${activeRecipeFilter}).</p><div class="empty-state-actions"><button class="btn btn-ghost" type="button" onclick="resetRecipeFilter()">Filter zurücksetzen</button></div></div>`;
+    }
     return;
   }
 
@@ -1702,7 +1715,7 @@ function renderShopping(){
   }
 
   if(items.length===0){
-    container.innerHTML=`<div class="empty-state"><div class="ei">🛒</div><h3>Liste ist leer</h3><p>Füge Rezepte hinzu oder tipp Zutaten manuell ein.</p></div>`;
+    container.innerHTML=`<div class="empty-state"><div class="ei" aria-hidden="true">🛒</div><h3>Einkaufsliste ist leer</h3><p>Füge Zutaten manuell hinzu, oder generiere die Liste automatisch aus deinem Wochenplan.</p><div class="empty-state-actions"><button class="btn btn-primary" type="button" onclick="addManualShopItem()">＋ Manuell hinzufügen</button><button class="btn btn-ghost" type="button" onclick="generateShoppingFromWeek()">📅 Aus Wochenplan</button></div></div>`;
     return;
   }
 
