@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Pantrio">
+  <rect width="512" height="512" rx="96" fill="#27AE60"/>
+  <!-- Maskable safe zone is 80% inner circle; all artwork below fits within that. -->
+  <g fill="#ffffff">
+    <rect x="116" y="160" width="280" height="36" rx="10"/>
+    <rect x="140" y="216" width="56" height="100" rx="10"/>
+    <rect x="208" y="216" width="56" height="100" rx="10"/>
+    <rect x="276" y="216" width="56" height="100" rx="10"/>
+    <rect x="344" y="216" width="36" height="100" rx="10"/>
+    <rect x="116" y="332" width="280" height="36" rx="10"/>
+  </g>
+</svg>
