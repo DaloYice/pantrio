@@ -21,6 +21,14 @@ initializeAppCheck(app, {
 const auth = getAuth(app);
 const db = getDatabase(app);
 
+// Register the service worker for PWA install + offline shell.
+// Registered after Firebase init so the page is interactive first.
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js').catch(() => { /* ignore – non-critical */ });
+  });
+}
+
 // ─── ENTER KEY LISTENERS ───
 document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('login-email').addEventListener('keydown', e => { if(e.key==='Enter') document.getElementById('login-password').focus(); });
