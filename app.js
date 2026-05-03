@@ -769,6 +769,57 @@ window.deleteFamily = async() => {
   }
 };
 
+window.exportFamilyData = async() => {
+  if(!currentUser || !familyId || !familyData){
+    alert('Keine Familie aktiv – nichts zu exportieren.');
+    return;
+  }
+  try{
+    // Pull a fresh snapshot of the whole family node (rules require active membership – which we have).
+    const snap = await get(ref(db,`families/${familyId}`));
+    if(!snap.exists()){
+      alert('Familiendaten konnten nicht gelesen werden.');
+      return;
+    }
+    const fam = snap.val();
+    const safeName = (fam.name||'familie').toLowerCase().replace(/[^a-z0-9-]+/g,'-').replace(/^-+|-+$/g,'') || 'familie';
+    const today = new Date().toISOString().slice(0,10);
+    const payload = {
+      pantrioExport: {
+        version: 1,
+        exportedAt: new Date().toISOString(),
+        exportedBy: { uid: currentUser.uid, name: currentUser.displayName || null, email: currentUser.email || null },
+        familyId: familyId
+      },
+      family: {
+        name: fam.name || null,
+        code: fam.code || null,
+        createdAt: fam.createdAt || null,
+        createdBy: fam.createdBy || null
+      },
+      members: fam.members || {},
+      pantry: fam.pantry || {},
+      staples: fam.staples || {},
+      recipes: fam.recipes || {},
+      weekPlan: fam.weekPlan || {},
+      shoppingList: fam.shoppingList || {}
+    };
+    const json = JSON.stringify(payload, null, 2);
+    const blob = new Blob([json], { type: 'application/json;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `pantrio-${safeName}-${today}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(()=>URL.revokeObjectURL(url), 1000);
+    if(typeof showPantryToast === 'function'){ showPantryToast('Export gestartet'); }
+  } catch(e){
+    alert('Export fehlgeschlagen: '+(e?.message||e));
+  }
+};
+
 async function loadAllUserFamilies(){
   const snap = await get(ref(db,`users/${currentUser.uid}/families`));
   const cached = snap.exists() ? snap.val() : {};
