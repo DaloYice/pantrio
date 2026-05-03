@@ -9,10 +9,10 @@
     "families": {
       "$familyId": {
         ".read": "auth != null && data.child('members').child(auth.uid).exists()",
-        ".write": "auth != null && (data.child('members').child(auth.uid).exists() || !data.exists())",
+        ".write": "auth != null && ((newData.exists() && (data.child('members').child(auth.uid).exists() || !data.exists())) || (!newData.exists() && data.exists() && data.child('members').child(auth.uid).child('role').val() === 'admin'))",
         "members": {
           "$memberId": {
-            ".write": "auth != null && (data.parent().parent().child('members').child(auth.uid).child('role').val() === 'admin' || (auth.uid === $memberId && !data.exists() && newData.child('joinCode').isString() && root.child('familyCodes').child(newData.child('joinCode').val()).val() === $familyId))"
+            ".write": "auth != null && (data.parent().parent().child('members').child(auth.uid).child('role').val() === 'admin' || (auth.uid === $memberId && !data.exists() && newData.child('joinCode').isString() && root.child('familyCodes').child(newData.child('joinCode').val()).val() === $familyId) || (auth.uid === $memberId && data.exists() && !newData.exists()))"
           }
         }
       }
