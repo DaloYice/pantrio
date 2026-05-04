@@ -449,7 +449,8 @@ function sanitize(str){
   if(!str) return '';
   return String(str).replace(/[<>'"&]/g, c => ({'<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;','&':'&amp;'}[c]));
 }
-// HTML-Escape am Render-Pfad. Defense-in-Depth zusätzlich zu sanitize() beim Speichern.
+// HTML-Escape am Render-Pfad – einzige Verteidigungslinie gegen XSS. Inputs werden roh gespeichert,
+// das Escapen passiert ausschließlich beim Rendern. Niemals beim Speichern escapen, sonst Doppel-Escape.
 const esc = sanitize;
 
 // ─── PASSWORD STRENGTH ───
@@ -1730,7 +1731,7 @@ window.addStepRow=(d='')=>{
 };
 
 window.saveRecipe=async()=>{
-  const name=sanitize(document.getElementById('r-name').value.trim());
+  const name=document.getElementById('r-name').value.trim();
   if(!name){ const e=document.getElementById('r-error'); e.textContent='Bitte einen Namen eingeben.'; e.classList.remove('hidden'); return; }
   document.getElementById('r-error').classList.add('hidden');
 
