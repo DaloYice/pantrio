@@ -1857,7 +1857,14 @@ window.openAddRecipeToShop=()=>{
     item.innerHTML=`<span style="font-size:28px">${r.emoji||'🍽'}</span><div style="flex:1"><div style="font-weight:600">${r.name}</div><div style="font-size:12px;color:var(--text2)">${missing.length===0?'✅ Alles vorhanden':'🛒 '+missing.length+' fehlen'}</div></div>`;
     item.onclick=()=>{
       const p=parseInt(document.getElementById('shop-portions').value)||4;
-      addIngsToShop(r,p);
+      const missingNow=calcMissing(r);
+      if(missingNow.length===0){
+        if(typeof showPantryToast === 'function'){ showPantryToast(`${r.name}: alles im Vorrat ✨`); }
+        closeModal('recipe-shop-modal');
+        return;
+      }
+      const added=addIngsToShop(r,p,true);
+      if(typeof showPantryToast === 'function'){ showPantryToast(`${added} fehlende Zutat${added===1?'':'en'} aus „${r.name}"`); }
       closeModal('recipe-shop-modal');
     };
     list.appendChild(item);
@@ -2016,7 +2023,16 @@ window.generateShoppingFromWeek=()=>{
   const recipeIds=new Set();
   Object.values(weekPlan).forEach(day=>{ if(day) Object.values(day).forEach(id=>recipeIds.add(id)); });
   if(recipeIds.size===0){ alert('Keine Rezepte im Wochenplan.'); return; }
-  recipeIds.forEach(id=>{ if(recipes[id]) addIngsToShop(recipes[id],recipes[id].portions||4); });
+  let totalAdded=0; let recipesContributing=0;
+  recipeIds.forEach(id=>{
+    const r=recipes[id]; if(!r) return;
+    const added=addIngsToShop(r, r.portions||4, true);
+    if(added>0){ totalAdded+=added; recipesContributing++; }
+  });
+  if(typeof showPantryToast === 'function'){
+    if(totalAdded===0){ showPantryToast('Alle Zutaten der Wochenrezepte sind im Vorrat ✨'); }
+    else { showPantryToast(`${totalAdded} fehlende Zutat${totalAdded===1?'':'en'} aus ${recipesContributing} Rezept${recipesContributing===1?'':'en'} übernommen`); }
+  }
   showPage('shopping-page');
 };
 
