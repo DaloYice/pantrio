@@ -7,7 +7,10 @@ const app = initializeApp({
   apiKey: "AIzaSyCwEc0C3hBaWeipnxIoGY_ugmtH1znuvZ4",
   authDomain: "pantrio-de.firebaseapp.com",
   databaseURL: "https://pantrio-de-default-rtdb.europe-west1.firebasedatabase.app",
-  projectId: "pantrio-de"
+  projectId: "pantrio-de",
+  storageBucket: "pantrio-de.firebasestorage.app",
+  messagingSenderId: "491477233854",
+  appId: "1:491477233854:web:7326836b414baa78442eef"
 });
 
 // App Check – verifies that requests come from this app, not from bots / stolen API key.
