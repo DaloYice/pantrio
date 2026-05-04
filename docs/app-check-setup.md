@@ -1,7 +1,12 @@
 # Firebase App Check – Setup-Plan für pantrio
 
-> Status: **vorbereitet, nicht aktiviert**.
-> Aktivierung pending: reCAPTCHA-v3-Site-Key vom Owner.
+> **Status (2026-05-05): aktiv im Beobachtungsmodus.** Site-Key registriert,
+> Provider in Firebase Console hinterlegt, Client initialisiert, vollständige
+> Web-App-Config (`appId`, `storageBucket`, `messagingSenderId`) seit v0.9.2
+> in `app.js`. Verified-Quote klettert.
+>
+> **Pending:** Enforcement (RTDB → Auth) — frühestens nach 24 h stabiler
+> Verified-Quote ≥ 99 % (Schritt 4 unten).
 
 App Check stellt sicher, dass nur Anfragen von **deiner** offiziellen Web-App
 (über die Live-Domain `pantrio-8sc.pages.dev`) auf RTDB und Auth zugreifen
@@ -47,9 +52,21 @@ Ab dann werden Requests **ohne** gültiges App-Check-Token abgewiesen.
 Nichts Schlimmes: solange Enforcement noch **nicht** aktiv ist, sammelt
 Firebase nur Telemetrie. Die App läuft normal weiter.
 
-## Was du dem Assistenten geben musst
+## Verlauf
 
-- Den **Site-Key** (kann öffentlich im Code stehen, ist kein Secret).
+- **2026-04-30** – Plan dokumentiert, Snippet in `index.html` (später nach `app.js`)
+  vorbereitet, App-Check-Console-Provider hinterlegt.
+- **2026-05-05 (v0.9.2)** – Verified-Quote stand auf 0 %. Ursache: in `initializeApp(...)`
+  fehlten `appId`, `storageBucket` und `messagingSenderId` → Token-Exchange-URL endete auf
+  `apps/undefined:exchangeRecaptchaV3Token` → 400 → `appCheck/throttled`. Mit der
+  vollständigen Firebase-Web-App-Config behoben. Verified-Quote klettert seitdem.
+- **Pending** – Enforcement aktivieren, sobald Verified-Quote ≥ 99 % stabil
+  (24 h Beobachtungsphase ab dem Fix).
 
-Sobald der vorliegt, baut der Assistent das Snippet in `index.html` ein,
-committet, und du aktivierst Enforcement im Console-Schritt 4.
+## Lessons Learned
+
+- App Check **muss** mit der vollständigen Firebase-Config initialisiert werden,
+  nicht nur `apiKey` + `authDomain` + `databaseURL` + `projectId`. Der `appId` ist
+  zwingend, sonst kann Firebase die App nicht zuordnen und keine Tokens validieren.
+- Symptom für falsche Config: `apps/undefined:` in der Token-Exchange-URL und
+  `Provided AppCheck credentials … are invalid` aus dem Database-Logger.
