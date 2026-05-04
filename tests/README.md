@@ -41,9 +41,28 @@ Eigenschaften ab:
 ## Bei Änderungen an den Rules
 
 Vor dem Push die Tests laufen lassen — ein Bruch in Erwartungen ist meist
-ein Hinweis auf eine Regression.
+ein Hinweis auf eine Regression. Falls lokale Voraussetzungen (Node.js + Java)
+nicht installiert sind, läuft die Suite ohnehin in CI bei jedem Push (siehe unten).
 
 ## CI
 
-(Optional, später) – Diese Tests können in einer GitHub Actions Pipeline
-laufen, sobald wir CI einrichten.
+Eingerichtet seit 2026-05-05 in [`.github/workflows/rules-tests.yml`](../.github/workflows/rules-tests.yml).
+Der Workflow läuft automatisch bei jedem Push und PR auf `main`, der eine der
+folgenden Dateien berührt:
+
+- `database.rules.json`
+- `tests/**`
+- `package.json` / `package-lock.json`
+- `firebase.json`
+- der Workflow selbst
+
+Reine UI-Änderungen (`app.js`/`app.css`/`index.html`) lösen ihn nicht aus
+(Path-Filter spart CI-Minuten). Manuell triggerbar via `workflow_dispatch`
+im Actions-Tab des Repos.
+
+**Pipeline:** Checkout → Node 20 → Java 17 (Temurin) → `npm install` → `npm test`.
+Erwartet: **24 passing**, Gesamtlaufzeit ≈ 2 Min.
+
+Status badge:
+
+[![Rules Tests](https://github.com/DaloYice/pantrio/actions/workflows/rules-tests.yml/badge.svg)](https://github.com/DaloYice/pantrio/actions/workflows/rules-tests.yml)
