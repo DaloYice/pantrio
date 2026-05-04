@@ -42,19 +42,37 @@ function setTheme(choice){
   }
   syncThemeSegment();
 }
+function effectiveTheme(){
+  const attr = document.documentElement.getAttribute('data-theme');
+  if(attr === 'light' || attr === 'dark') return attr;
+  return (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
+}
+function toggleTheme(){
+  setTheme(effectiveTheme() === 'dark' ? 'light' : 'dark');
+}
 function syncThemeSegment(){
   let active = 'system';
   try { const s = localStorage.getItem(THEME_KEY); if(s === 'light' || s === 'dark') active = s; } catch(e){}
   const seg = document.getElementById('theme-segment');
-  if(!seg) return;
-  seg.querySelectorAll('[data-theme-choice]').forEach(btn => {
-    const isActive = btn.dataset.themeChoice === active;
-    btn.classList.toggle('btn-primary', isActive);
-    btn.classList.toggle('btn-outline', !isActive);
-    btn.setAttribute('aria-checked', isActive ? 'true' : 'false');
-  });
+  if(seg){
+    seg.querySelectorAll('[data-theme-choice]').forEach(btn => {
+      const isActive = btn.dataset.themeChoice === active;
+      btn.classList.toggle('btn-primary', isActive);
+      btn.classList.toggle('btn-outline', !isActive);
+      btn.setAttribute('aria-checked', isActive ? 'true' : 'false');
+    });
+  }
+  const icon = document.getElementById('theme-toggle-icon');
+  if(icon){
+    // Show the icon for the action: when currently light, show 🌙 (click → dark); when dark, show ☀️
+    icon.textContent = effectiveTheme() === 'dark' ? '☀️' : '🌙';
+  }
 }
 window.setTheme = setTheme;
+window.toggleTheme = toggleTheme;
+if(window.matchMedia){
+  try { window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', syncThemeSegment); } catch(e){}
+}
 
 // ─── ENTER KEY LISTENERS ───
 document.addEventListener('DOMContentLoaded', () => {
