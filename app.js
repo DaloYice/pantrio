@@ -29,8 +29,36 @@ if ('serviceWorker' in navigator) {
   });
 }
 
+// ─── THEME ───
+const THEME_KEY = 'pantrio.theme';
+function setTheme(choice){
+  // choice: 'light' | 'dark' | 'system'
+  if(choice === 'system'){
+    try { localStorage.removeItem(THEME_KEY); } catch(e){}
+    document.documentElement.removeAttribute('data-theme');
+  } else {
+    try { localStorage.setItem(THEME_KEY, choice); } catch(e){}
+    document.documentElement.setAttribute('data-theme', choice);
+  }
+  syncThemeSegment();
+}
+function syncThemeSegment(){
+  let active = 'system';
+  try { const s = localStorage.getItem(THEME_KEY); if(s === 'light' || s === 'dark') active = s; } catch(e){}
+  const seg = document.getElementById('theme-segment');
+  if(!seg) return;
+  seg.querySelectorAll('[data-theme-choice]').forEach(btn => {
+    const isActive = btn.dataset.themeChoice === active;
+    btn.classList.toggle('btn-primary', isActive);
+    btn.classList.toggle('btn-outline', !isActive);
+    btn.setAttribute('aria-checked', isActive ? 'true' : 'false');
+  });
+}
+window.setTheme = setTheme;
+
 // ─── ENTER KEY LISTENERS ───
 document.addEventListener('DOMContentLoaded', () => {
+  syncThemeSegment();
   document.getElementById('login-email').addEventListener('keydown', e => { if(e.key==='Enter') document.getElementById('login-password').focus(); });
   document.getElementById('login-password').addEventListener('keydown', e => { if(e.key==='Enter') window.login(); });
   document.getElementById('reg-password').addEventListener('keydown', e => { if(e.key==='Enter') window.register(); });
