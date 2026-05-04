@@ -13,6 +13,17 @@
 <link rel="icon" type="image/svg+xml" href="/icon.svg">
 <link rel="apple-touch-icon" href="/icon.svg">
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,400;0,700;0,900;1,400&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<script>
+  // Theme bootstrap (must run before app.css applies, prevents FOUC)
+  (function(){
+    try {
+      var saved = localStorage.getItem('pantrio.theme');
+      if (saved === 'light' || saved === 'dark') {
+        document.documentElement.setAttribute('data-theme', saved);
+      }
+    } catch (e) {}
+  })();
+</script>
 <link rel="stylesheet" href="app.css">
 </head>
 <body>
@@ -506,6 +517,16 @@
     <div id="all-families-list" style="display:flex;flex-direction:column;gap:8px;margin-bottom:12px"></div>
     <div style="display:flex;gap:10px">
       <button class="btn btn-outline" style="flex:1" onclick="openFamilySwitcher()">＋ Familie hinzufügen</button>
+    </div>
+
+    <!-- Darstellung -->
+    <div style="margin-top:32px;padding-top:20px;border-top:1px solid var(--border)">
+      <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text2);margin-bottom:8px">Darstellung</div>
+      <div id="theme-segment" role="radiogroup" aria-label="Farbschema" style="display:flex;gap:8px">
+        <button type="button" class="btn btn-outline" style="flex:1" data-theme-choice="light" onclick="setTheme('light')" role="radio" aria-checked="false">☀️ Hell</button>
+        <button type="button" class="btn btn-outline" style="flex:1" data-theme-choice="dark"  onclick="setTheme('dark')"  role="radio" aria-checked="false">🌙 Dunkel</button>
+        <button type="button" class="btn btn-outline" style="flex:1" data-theme-choice="system" onclick="setTheme('system')" role="radio" aria-checked="false">🖥 System</button>
+      </div>
     </div>
 
     <!-- Data Export -->
