@@ -342,8 +342,8 @@ function renderFamilyMembers() {
   ul.innerHTML = '';
   Object.entries(members).forEach(([uid, m]) => {
     ul.innerHTML += `<li style="display:flex;align-items:center;gap:12px;padding:14px 0;border-bottom:1px solid var(--border)">
-      <div style="width:38px;height:38px;border-radius:50%;background:var(--green);color:white;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:15px;flex-shrink:0">${(m.name||'?')[0].toUpperCase()}</div>
-      <div style="flex:1"><div style="font-weight:600">${m.name||'Unbekannt'} ${uid===currentUser.uid?'<span style="background:var(--green-light);color:var(--green);padding:2px 8px;border-radius:20px;font-size:11px;font-weight:700">Du</span>':''}</div>
+      <div style="width:38px;height:38px;border-radius:50%;background:var(--green);color:white;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:15px;flex-shrink:0">${esc((m.name||'?')[0].toUpperCase())}</div>
+      <div style="flex:1"><div style="font-weight:600">${esc(m.name||'Unbekannt')} ${uid===currentUser.uid?'<span style="background:var(--green-light);color:var(--green);padding:2px 8px;border-radius:20px;font-size:11px;font-weight:700">Du</span>':''}</div>
       <div style="font-size:12px;color:var(--text2)">${m.role==='admin'?'👑 Admin':'👤 Mitglied'}</div></div></li>`;
   });
   const last = ul.querySelector('li:last-child');
@@ -447,8 +447,10 @@ function showLockoutModal(){
 // ─── INPUT SANITIZATION ───
 function sanitize(str){
   if(!str) return '';
-  return str.replace(/[<>'"&]/g, c => ({'<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;','&':'&amp;'}[c]));
+  return String(str).replace(/[<>'"&]/g, c => ({'<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;','&':'&amp;'}[c]));
 }
+// HTML-Escape am Render-Pfad. Defense-in-Depth zusätzlich zu sanitize() beim Speichern.
+const esc = sanitize;
 
 // ─── PASSWORD STRENGTH ───
 window.checkPasswordStrength = (pw) => {
@@ -490,7 +492,7 @@ window.login = async()=>{
 };
 
 window.register = async()=>{
-  const name=sanitize(document.getElementById('reg-name').value.trim());
+  const name=document.getElementById('reg-name').value.trim();
   const email=document.getElementById('reg-email').value.trim();
   const pw=document.getElementById('reg-password').value;
   if(!name||!email||!pw){ authErr('Bitte alle Felder ausfüllen.'); return; }
@@ -705,7 +707,7 @@ function updateGreeting(){
   const h=new Date().getHours();
   const name=currentUser?.displayName?.split(' ')[0]||'';
   let g=h<12?'Guten Morgen':h<18?'Guten Mittag':'Guten Abend';
-  document.getElementById('home-greeting-text').innerHTML=`${g}${name?', '+name:''}! <br><em>Was kochst du heute?</em>`;
+  document.getElementById('home-greeting-text').innerHTML=`${g}${name?', '+esc(name):''}! <br><em>Was kochst du heute?</em>`;
 }
 
 // ─── FAMILY LISTENER ───
@@ -932,7 +934,7 @@ function renderAllFamiliesList(){
     div.innerHTML = `
       <div style="width:36px;height:36px;border-radius:10px;background:${fid===familyId?'var(--green)':'var(--surface2)'};color:${fid===familyId?'white':'var(--text2)'};display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">🏠</div>
       <div style="flex:1">
-        <div class="fli-name">${f.name||'Familie'}</div>
+        <div class="fli-name">${esc(f.name||'Familie')}</div>
         <div class="fli-role">${f.role==='admin'?'👑 Admin':'👤 Mitglied'}${fid===familyId?' · Aktiv':''}</div>
       </div>
       ${fid!==familyId?`<button class="btn btn-secondary btn-sm" onclick="switchToFamily('${fid}')">Wechseln</button>`:'<span style="font-size:12px;color:var(--green);font-weight:700">✓</span>'}
@@ -970,7 +972,7 @@ function renderSwitcherFamilies(){
     div.innerHTML = `
       <div style="width:36px;height:36px;border-radius:10px;background:${fid===familyId?'var(--green)':'var(--surface2)'};color:${fid===familyId?'white':'var(--text2)'};display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">🏠</div>
       <div style="flex:1">
-        <div class="fli-name">${f.name||'Familie'}</div>
+        <div class="fli-name">${esc(f.name||'Familie')}</div>
         <div class="fli-role">${f.role==='admin'?'👑 Admin':'👤 Mitglied'}</div>
       </div>
       ${fid===familyId?'<span style="font-size:12px;color:var(--green);font-weight:700">Aktiv ✓</span>':`<button class="btn btn-secondary btn-sm" onclick="switchToFamily('${fid}')">Wechseln</button>`}
@@ -1082,10 +1084,10 @@ window.searchPantryIngredients=(query)=>{
     <div onclick="selectPantryIngredient(${JSON.stringify(m).replace(/"/g,'&quot;')})"
       style="padding:11px 14px;display:flex;align-items:center;gap:10px;cursor:pointer;border-bottom:1px solid var(--border);transition:background 0.1s"
       onmouseover="this.style.background='var(--surface2)'" onmouseout="this.style.background=''">
-      <span style="font-size:22px">${m.emoji}</span>
+      <span style="font-size:22px">${esc(m.emoji)}</span>
       <div style="flex:1">
-        <div style="font-weight:600;font-size:14px">${m.name} ${m.alreadyInPantry?'<span style="font-size:10px;background:var(--green-light);color:var(--green);padding:1px 6px;border-radius:10px;font-weight:700">schon vorhanden</span>':''}</div>
-        <div style="font-size:11px;color:var(--text2)">aus ${m.recipe}${m.unit?' · '+m.unit:''}</div>
+        <div style="font-weight:600;font-size:14px">${esc(m.name)} ${m.alreadyInPantry?'<span style="font-size:10px;background:var(--green-light);color:var(--green);padding:1px 6px;border-radius:10px;font-weight:700">schon vorhanden</span>':''}</div>
+        <div style="font-size:11px;color:var(--text2)">aus ${esc(m.recipe)}${m.unit?' · '+esc(m.unit):''}</div>
       </div>
       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="var(--green)"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>
     </div>
@@ -1105,7 +1107,7 @@ window.selectPantryIngredient=(ing)=>{
 };
 
 window.savePantryItem=async()=>{
-  const name=sanitize(document.getElementById('p-name').value.trim());
+  const name=document.getElementById('p-name').value.trim();
   if(!name) return;
   const item={
     name,
@@ -1220,17 +1222,17 @@ function renderPantry(search=''){
   Object.entries(groups).forEach(([cat,entries])=>{
     const section=document.createElement('div');
     section.style.cssText='margin-bottom:16px';
-    section.innerHTML=`<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text2);margin-bottom:8px;display:flex;align-items:center;gap:6px">${CAT_ICONS[cat]||'📦'} ${cat} <span style="background:var(--surface2);color:var(--text2);padding:1px 7px;border-radius:10px;font-size:10px">${entries.length}</span></div>`;
+    section.innerHTML=`<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text2);margin-bottom:8px;display:flex;align-items:center;gap:6px">${CAT_ICONS[cat]||'📦'} ${esc(cat)} <span style="background:var(--surface2);color:var(--text2);padding:1px 7px;border-radius:10px;font-size:10px">${entries.length}</span></div>`;
     entries.forEach(([id,p])=>{
       const div=document.createElement('div');
       div.className='pantry-item';
       div.innerHTML=`
-        <div class="pantry-item-emoji">${p.emoji||'📦'}</div>
+        <div class="pantry-item-emoji">${esc(p.emoji||'📦')}</div>
         <div class="pantry-item-info">
-          <div class="pantry-item-name">${p.name}</div>
-          <div class="pantry-item-amount">${p.amount?p.amount+' '+(p.unit||''):''}${p.amount&&p.category?' · ':''}${p.category||''}</div>
+          <div class="pantry-item-name">${esc(p.name)}</div>
+          <div class="pantry-item-amount">${p.amount?esc(p.amount)+' '+esc(p.unit||''):''}${p.amount&&p.category?' · ':''}${esc(p.category||'')}</div>
         </div>
-        <div class="status-dot status-${p.status||'ok'}"></div>
+        <div class="status-dot status-${esc(p.status||'ok')}"></div>
         <div class="pantry-item-actions">
           <button class="icon-btn delete" onclick="deletePantryItem('${id}')">×</button>
         </div>`;
@@ -1262,7 +1264,7 @@ window.toggleStapleForm=()=>{
 };
 
 window.saveStaple=async()=>{
-  const name=sanitize(document.getElementById('st-name').value.trim());
+  const name=document.getElementById('st-name').value.trim();
   if(!name) return;
   const item={
     name,
@@ -1323,7 +1325,7 @@ function renderStaples(){
   Object.entries(groups).forEach(([cat,items])=>{
     const header=document.createElement('div');
     header.style.cssText='font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text2);margin-bottom:8px;margin-top:14px;display:flex;align-items:center;gap:6px';
-    header.innerHTML=`${CAT_ICONS[cat]||'📦'} ${cat} <span style="background:var(--surface2);color:var(--text2);padding:1px 7px;border-radius:10px;font-size:10px">${items.length}</span>`;
+    header.innerHTML=`${CAT_ICONS[cat]||'📦'} ${esc(cat)} <span style="background:var(--surface2);color:var(--text2);padding:1px 7px;border-radius:10px;font-size:10px">${items.length}</span>`;
     list.appendChild(header);
     items.forEach(([id,s])=>{
       // Check if currently in pantry
@@ -1332,15 +1334,15 @@ function renderStaples(){
       div.className='staple-item';
       div.innerHTML=`
         <span class="star">⭐</span>
-        <span style="font-size:22px">${s.emoji||'📦'}</span>
+        <span style="font-size:22px">${esc(s.emoji||'📦')}</span>
         <div style="flex:1">
           <div style="font-weight:600;display:flex;align-items:center;gap:6px">
-            ${s.name}
+            ${esc(s.name)}
             <span style="font-size:10px;padding:2px 7px;border-radius:10px;font-weight:700;background:${inPantry?'var(--green-light)':'var(--red-light)'};color:${inPantry?'var(--green)':'var(--red)'}">
               ${inPantry?'✓ Im Vorrat':'✗ Fehlt'}
             </span>
           </div>
-          <div style="font-size:12px;color:var(--text2)">${s.amount?s.amount+' '+(s.unit||''):''}${s.amount&&s.category?' · ':''}${s.category||''}</div>
+          <div style="font-size:12px;color:var(--text2)">${s.amount?esc(s.amount)+' '+esc(s.unit||''):''}${s.amount&&s.category?' · ':''}${esc(s.category||'')}</div>
         </div>
         <div style="display:flex;gap:6px">
           ${!inPantry?`<button class="icon-btn" onclick="addStapleToShopManual('${id}')" title="Zur Einkaufsliste" style="color:var(--green)">🛒</button>`:''}
@@ -1392,7 +1394,7 @@ function renderCookMode(){
   Object.entries(groups).forEach(([cat,entries])=>{
     const header=document.createElement('div');
     header.style.cssText='font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text2);margin-bottom:6px;margin-top:14px;display:flex;align-items:center;gap:6px';
-    header.innerHTML=`${CAT_ICONS[cat]||'📦'} ${cat}`;
+    header.innerHTML=`${CAT_ICONS[cat]||'📦'} ${esc(cat)}`;
     list.appendChild(header);
 
     entries.forEach(([id,p])=>{
@@ -1401,10 +1403,10 @@ function renderCookMode(){
       div.id=`cook-${id}`;
       div.innerHTML=`
         <div class="checkbox" id="cook-cb-${id}"></div>
-        <span style="font-size:22px">${p.emoji||'📦'}</span>
+        <span style="font-size:22px">${esc(p.emoji||'📦')}</span>
         <div style="flex:1">
-          <div class="cook-name" style="font-weight:600">${p.name}</div>
-          <div style="font-size:12px;color:var(--text2)">${p.amount?p.amount+' '+(p.unit||''):'Menge nicht angegeben'}</div>
+          <div class="cook-name" style="font-weight:600">${esc(p.name)}</div>
+          <div style="font-size:12px;color:var(--text2)">${p.amount?esc(p.amount)+' '+esc(p.unit||''):'Menge nicht angegeben'}</div>
         </div>
       `;
       div.onclick=()=>toggleCookItem(id);
@@ -1513,7 +1515,7 @@ function renderRecipes(search=''){
     if(total===0){
       container.innerHTML=`<div class="empty-state"><div class="ei" aria-hidden="true">📖</div><h3>Noch keine Rezepte</h3><p>Leg dein erstes Rezept an oder importiere ein paar Klassiker, um loszulegen.</p><div class="empty-state-actions"><button class="btn btn-primary" type="button" onclick="showAddRecipePage()">＋ Rezept hinzufügen</button></div></div>`;
     } else {
-      container.innerHTML=`<div class="empty-state"><div class="ei" aria-hidden="true">🔍</div><h3>Nichts gefunden</h3><p>Keine Rezepte passen zu deinem Filter (${activeRecipeFilter}).</p><div class="empty-state-actions"><button class="btn btn-ghost" type="button" onclick="resetRecipeFilter()">Filter zurücksetzen</button></div></div>`;
+      container.innerHTML=`<div class="empty-state"><div class="ei" aria-hidden="true">🔍</div><h3>Nichts gefunden</h3><p>Keine Rezepte passen zu deinem Filter (${esc(activeRecipeFilter)}).</p><div class="empty-state-actions"><button class="btn btn-ghost" type="button" onclick="resetRecipeFilter()">Filter zurücksetzen</button></div></div>`;
     }
     return;
   }
@@ -1529,17 +1531,17 @@ function renderRecipes(search=''){
     card.className='recipe-card';
     card.onclick=()=>showDetail(id);
     card.innerHTML=`
-      <div class="recipe-emoji-box">${r.emoji||'🍽'}</div>
+      <div class="recipe-emoji-box">${esc(r.emoji||'🍽')}</div>
       <div class="recipe-card-info">
-        <div class="recipe-card-name">${r.name}</div>
+        <div class="recipe-card-name">${esc(r.name)}</div>
         <div class="recipe-card-meta">
-          <span class="tag">${r.category||'Sonstiges'}</span>
-          ${r.prepTime?`<span class="tag">⏱ ${r.prepTime} min</span>`:''}
-          ${r.difficulty?`<span class="tag">${r.difficulty}</span>`:''}
+          <span class="tag">${esc(r.category||'Sonstiges')}</span>
+          ${r.prepTime?`<span class="tag">⏱ ${esc(r.prepTime)} min</span>`:''}
+          ${r.difficulty?`<span class="tag">${esc(r.difficulty)}</span>`:''}
         </div>
         <div class="recipe-card-missing">
           ${badge}
-          ${missing.length>0?`<span class="missing-items">${missing.slice(0,2).map(m=>m.name).join(', ')}${missing.length>2?' …':''}</span>`:''}
+          ${missing.length>0?`<span class="missing-items">${missing.slice(0,2).map(m=>esc(m.name)).join(', ')}${missing.length>2?' …':''}</span>`:''}
         </div>
       </div>`;
     container.appendChild(card);
@@ -1569,12 +1571,12 @@ function renderHome(){
     card.className='quick-recipe-card';
     card.onclick=()=>showDetail(id);
     card.innerHTML=`
-      <div class="qr-emoji">${r.emoji||'🍽'}</div>
+      <div class="qr-emoji">${esc(r.emoji||'🍽')}</div>
       <div class="qr-info">
-        <div class="qr-name">${r.name}</div>
+        <div class="qr-name">${esc(r.name)}</div>
         <div class="qr-meta">
-          ${r.category?`<span>${r.category}</span>`:''}
-          ${r.prepTime?`<span>⏱ ${r.prepTime} min</span>`:''}
+          ${r.category?`<span>${esc(r.category)}</span>`:''}
+          ${r.prepTime?`<span>⏱ ${esc(r.prepTime)} min</span>`:''}
         </div>
       </div>
       ${badge}`;
@@ -1595,14 +1597,14 @@ window.showDetail=(id)=>{
 
     document.getElementById('detail-content').innerHTML=`
       <div class="detail-hero">
-        <div class="detail-emoji">${r.emoji||'🍽'}</div>
-        <div class="detail-title">${r.name}</div>
+        <div class="detail-emoji">${esc(r.emoji||'🍽')}</div>
+        <div class="detail-title">${esc(r.name)}</div>
         <div class="detail-tags">
-          <span class="tag" style="background:var(--green-light);color:var(--green)">${r.category||'Sonstiges'}</span>
-          ${r.prepTime?`<span class="tag">⏱ ${r.prepTime} min</span>`:''}
-          ${r.difficulty?`<span class="tag">${r.difficulty}</span>`:''}
+          <span class="tag" style="background:var(--green-light);color:var(--green)">${esc(r.category||'Sonstiges')}</span>
+          ${r.prepTime?`<span class="tag">⏱ ${esc(r.prepTime)} min</span>`:''}
+          ${r.difficulty?`<span class="tag">${esc(r.difficulty)}</span>`:''}
         </div>
-        ${r.description?`<p class="detail-desc">${r.description}</p>`:''}
+        ${r.description?`<p class="detail-desc">${esc(r.description)}</p>`:''}
       </div>
 
       <div class="portions-bar">
@@ -1622,8 +1624,8 @@ window.showDetail=(id)=>{
             const amt=ing.amount?(Math.round(ing.amount*scale*10)/10):'';
             return `<div class="ingredient-row-item">
               <div class="ing-status" style="background:${has?'var(--green)':'var(--red)'}"></div>
-              <div class="ing-name-col">${ing.name}</div>
-              <div class="ing-amount-col">${amt} ${ing.unit||''}</div>
+              <div class="ing-name-col">${esc(ing.name)}</div>
+              <div class="ing-amount-col">${esc(amt)} ${esc(ing.unit||'')}</div>
               ${!has?'<div class="ing-missing">fehlt</div>':''}
             </div>`;
           }).join('')}
@@ -1633,7 +1635,7 @@ window.showDetail=(id)=>{
       ${(r.steps||[]).length>0?`
         <div class="steps-block">
           <div class="block-header">👨‍🍳 Zubereitung</div>
-          ${(r.steps||[]).map((s,i)=>`<div class="step-row-item"><div class="step-num">${i+1}</div><div class="step-text">${s}</div></div>`).join('')}
+          ${(r.steps||[]).map((s,i)=>`<div class="step-row-item"><div class="step-num">${i+1}</div><div class="step-text">${esc(s)}</div></div>`).join('')}
         </div>
       `:''}
 
@@ -1716,14 +1718,14 @@ window.cancelRecipeForm=()=>showPage('recipes-page');
 window.addIngRow=(d={})=>{
   const row=document.createElement('div');
   row.className='ing-form-row';
-  row.innerHTML=`<input type="text" placeholder="Nudeln" value="${d.name||''}" class="i-name"><input type="number" placeholder="200" value="${d.amount||''}" class="i-amount" min="0" step="0.1"><input type="text" placeholder="g" value="${d.unit||''}" class="i-unit"><button class="remove-btn" onclick="this.parentElement.remove()">×</button>`;
+  row.innerHTML=`<input type="text" placeholder="Nudeln" value="${esc(d.name||'')}" class="i-name"><input type="number" placeholder="200" value="${esc(d.amount||'')}" class="i-amount" min="0" step="0.1"><input type="text" placeholder="g" value="${esc(d.unit||'')}" class="i-unit"><button class="remove-btn" onclick="this.parentElement.remove()">×</button>`;
   document.getElementById('r-ingredients').appendChild(row);
 };
 
 window.addStepRow=(d='')=>{
   const row=document.createElement('div');
   row.className='step-form-row';
-  row.innerHTML=`<textarea rows="2" placeholder="Schritt beschreiben…" class="s-text">${d}</textarea><button class="remove-btn" onclick="this.parentElement.remove()" style="margin-top:2px">×</button>`;
+  row.innerHTML=`<textarea rows="2" placeholder="Schritt beschreiben…" class="s-text">${esc(d)}</textarea><button class="remove-btn" onclick="this.parentElement.remove()" style="margin-top:2px">×</button>`;
   document.getElementById('r-steps').appendChild(row);
 };
 
@@ -1903,7 +1905,7 @@ window.openAddRecipeToShop=()=>{
     const missing=calcMissing(r);
     const item=document.createElement('div');
     item.className='recipe-select-item';
-    item.innerHTML=`<span style="font-size:28px">${r.emoji||'🍽'}</span><div style="flex:1"><div style="font-weight:600">${r.name}</div><div style="font-size:12px;color:var(--text2)">${missing.length===0?'✅ Alles vorhanden':'🛒 '+missing.length+' fehlen'}</div></div>`;
+    item.innerHTML=`<span style="font-size:28px">${esc(r.emoji||'🍽')}</span><div style="flex:1"><div style="font-weight:600">${esc(r.name)}</div><div style="font-size:12px;color:var(--text2)">${missing.length===0?'✅ Alles vorhanden':'🛒 '+missing.length+' fehlen'}</div></div>`;
     item.onclick=()=>{
       const p=parseInt(document.getElementById('shop-portions').value)||4;
       const missingNow=calcMissing(r);
@@ -1954,13 +1956,13 @@ function renderShopping(){
 
   let html='';
   Object.entries(groups).forEach(([cat,items])=>{
-    html+=`<div class="shopping-group"><div class="shopping-group-header">${CAT_ICONS[cat]||'📦'} ${cat}</div>`;
+    html+=`<div class="shopping-group"><div class="shopping-group-header">${CAT_ICONS[cat]||'📦'} ${esc(cat)}</div>`;
     items.forEach(([k,v])=>{
       html+=`<div class="shopping-item" onclick="toggleShopItem('${k}')">
         <div class="checkbox"></div>
-        <span class="si-name">${v.name}</span>
-        ${v.amount?`<span class="si-amount">${v.amount} ${v.unit||''}</span>`:''}
-        ${v.from?`<span class="si-from">${v.from}</span>`:''}
+        <span class="si-name">${esc(v.name)}</span>
+        ${v.amount?`<span class="si-amount">${esc(v.amount)} ${esc(v.unit||'')}</span>`:''}
+        ${v.from?`<span class="si-from">${esc(v.from)}</span>`:''}
       </div>`;
     });
     html+='</div>';
@@ -1971,7 +1973,7 @@ function renderShopping(){
     checked.forEach(([k,v])=>{
       html+=`<div class="shopping-item checked" onclick="toggleShopItem('${k}')">
         <div class="checkbox"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg></div>
-        <span class="si-name">${v.name}</span>
+        <span class="si-name">${esc(v.name)}</span>
       </div>`;
     });
     html+='</div>';
@@ -2011,7 +2013,7 @@ function renderWeekGrid(){
         const r=dayData[meal]?recipes[dayData[meal]]:null;
         return `<div class="meal-slot ${r?'filled':''}" onclick="openDayModal('${day}','${meal}')">
           <span class="meal-slot-label">${meal}</span>
-          ${r?`<span class="meal-slot-emoji">${r.emoji||'🍽'}</span><span class="meal-slot-content">${r.name}</span>`
+          ${r?`<span class="meal-slot-emoji">${esc(r.emoji||'🍽')}</span><span class="meal-slot-content">${esc(r.name)}</span>`
              :`<span class="meal-slot-empty">+ Rezept wählen</span>`}
         </div>`;
       }).join('')}
@@ -2032,7 +2034,7 @@ window.openDayModal=(day,meal)=>{
     const item=document.createElement('div');
     item.className='recipe-select-item';
     if(id===existing) item.style.borderColor='var(--green)';
-    item.innerHTML=`<span style="font-size:28px">${r.emoji||'🍽'}</span><div style="flex:1"><div style="font-weight:600">${r.name}</div><div style="font-size:12px;color:var(--text2)">${r.category||''} ${r.prepTime?'· ⏱ '+r.prepTime+' min':''}</div></div>`;
+    item.innerHTML=`<span style="font-size:28px">${esc(r.emoji||'🍽')}</span><div style="flex:1"><div style="font-weight:600">${esc(r.name)}</div><div style="font-size:12px;color:var(--text2)">${esc(r.category||'')} ${r.prepTime?'· ⏱ '+esc(r.prepTime)+' min':''}</div></div>`;
     item.onclick=()=>{ setMealForDay(day,meal,id); closeModal('day-recipe-modal'); };
     list.appendChild(item);
   });
