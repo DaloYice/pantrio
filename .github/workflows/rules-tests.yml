@@ -35,7 +35,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: 'npm'
 
       - name: Setup Java (required by Firebase Emulator)
         uses: actions/setup-java@v4
