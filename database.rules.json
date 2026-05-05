@@ -11,36 +11,77 @@
         ".read": "auth != null && data.child('members').child(auth.uid).exists()",
         ".write": "auth != null && ((newData.exists() && !data.exists() && newData.child('members').child(auth.uid).child('role').val() === 'admin') || (data.exists() && !newData.exists() && data.child('members').child(auth.uid).child('role').val() === 'admin'))",
         "name": {
-          ".write": "auth != null && data.parent().child('members').child(auth.uid).child('role').val() === 'admin'"
+          ".write": "auth != null && data.parent().child('members').child(auth.uid).child('role').val() === 'admin'",
+          ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 80"
         },
         "code": {
-          ".write": "auth != null && data.parent().child('members').child(auth.uid).child('role').val() === 'admin'"
+          ".write": "auth != null && data.parent().child('members').child(auth.uid).child('role').val() === 'admin'",
+          ".validate": "newData.isString() && newData.val().length >= 4 && newData.val().length <= 24"
         },
         "createdBy": {
-          ".write": "auth != null && data.parent().child('members').child(auth.uid).child('role').val() === 'admin'"
+          ".write": "auth != null && data.parent().child('members').child(auth.uid).child('role').val() === 'admin'",
+          ".validate": "newData.isString() && newData.val().length <= 128"
         },
         "createdAt": {
-          ".write": "auth != null && data.parent().child('members').child(auth.uid).child('role').val() === 'admin'"
+          ".write": "auth != null && data.parent().child('members').child(auth.uid).child('role').val() === 'admin'",
+          ".validate": "newData.isNumber()"
         },
         "members": {
           "$memberId": {
             ".write": "auth != null && (data.parent().parent().child('members').child(auth.uid).child('role').val() === 'admin' || (auth.uid === $memberId && !data.exists() && newData.child('joinCode').isString() && root.child('familyCodes').child(newData.child('joinCode').val()).val() === $familyId) || (auth.uid === $memberId && data.exists() && !newData.exists()))",
             "role": {
-              ".validate": "newData.isString() && (data.parent().parent().parent().child('members').child(auth.uid).child('role').val() === 'admin' || (auth.uid === $memberId && !data.exists()))"
+              ".validate": "newData.isString() && (newData.val() === 'admin' || newData.val() === 'member') && (data.parent().parent().parent().child('members').child(auth.uid).child('role').val() === 'admin' || (auth.uid === $memberId && !data.exists()))"
+            },
+            "name": {
+              ".validate": "newData.isString() && newData.val().length <= 80"
+            },
+            "joinCode": {
+              ".validate": "newData.isString() && newData.val().length >= 4 && newData.val().length <= 24"
+            },
+            "joinedAt": {
+              ".validate": "newData.isNumber()"
             }
           }
         },
         "pantry": {
-          ".write": "auth != null && data.parent().child('members').child(auth.uid).exists()"
+          ".write": "auth != null && data.parent().child('members').child(auth.uid).exists()",
+          "$itemId": {
+            "name":     { ".validate": "newData.isString() && newData.val().length <= 80" },
+            "emoji":    { ".validate": "newData.isString() && newData.val().length <= 8" },
+            "unit":     { ".validate": "newData.isString() && newData.val().length <= 24" },
+            "category": { ".validate": "newData.isString() && newData.val().length <= 40" },
+            "status":   { ".validate": "newData.isString() && newData.val().length <= 16" },
+            "amount":   { ".validate": "newData.isNumber() || newData.isString()" }
+          }
         },
         "staples": {
-          ".write": "auth != null && data.parent().child('members').child(auth.uid).exists()"
+          ".write": "auth != null && data.parent().child('members').child(auth.uid).exists()",
+          "$itemId": {
+            "name":     { ".validate": "newData.isString() && newData.val().length <= 80" },
+            "emoji":    { ".validate": "newData.isString() && newData.val().length <= 8" },
+            "unit":     { ".validate": "newData.isString() && newData.val().length <= 24" },
+            "category": { ".validate": "newData.isString() && newData.val().length <= 40" },
+            "amount":   { ".validate": "newData.isNumber() || newData.isString()" }
+          }
         },
         "recipes": {
-          ".write": "auth != null && data.parent().child('members').child(auth.uid).exists()"
+          ".write": "auth != null && data.parent().child('members').child(auth.uid).exists()",
+          "$itemId": {
+            "name":        { ".validate": "newData.isString() && newData.val().length <= 100" },
+            "emoji":       { ".validate": "newData.isString() && newData.val().length <= 8" },
+            "category":    { ".validate": "newData.isString() && newData.val().length <= 40" },
+            "difficulty":  { ".validate": "newData.isString() && newData.val().length <= 40" },
+            "description": { ".validate": "newData.isString() && newData.val().length <= 2000" }
+          }
         },
         "shoppingList": {
-          ".write": "auth != null && data.parent().child('members').child(auth.uid).exists()"
+          ".write": "auth != null && data.parent().child('members').child(auth.uid).exists()",
+          "$key": {
+            "name":     { ".validate": "newData.isString() && newData.val().length <= 80" },
+            "unit":     { ".validate": "newData.isString() && newData.val().length <= 24" },
+            "category": { ".validate": "newData.isString() && newData.val().length <= 40" },
+            "from":     { ".validate": "newData.isString() && newData.val().length <= 80" }
+          }
         },
         "weekPlan": {
           ".write": "auth != null && data.parent().child('members').child(auth.uid).exists()"
