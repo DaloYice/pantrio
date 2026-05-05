@@ -5,7 +5,7 @@
 //   - Cross-origin (Firebase, Google Fonts, reCAPTCHA): NICHT abgefangen,
 //     gehen direkt zum Netzwerk – keine Token-Caching-Probleme.
 
-const CACHE = 'pantrio-shell-v5';
+const CACHE = 'pantrio-shell-v6';
 const SHELL = [
   '/',
   '/index.html',
