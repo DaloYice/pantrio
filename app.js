@@ -1643,6 +1643,7 @@ window.showDetail=(id)=>{
       <div class="detail-actions">
         <button class="btn btn-primary btn-sm" onclick="addRecipeToShopDirect('${id}')" ${missing.length===0?'disabled':''} title="${missing.length===0?'Alle Zutaten sind im Vorrat':'Nur fehlende Zutaten werden hinzugefügt'}">${missing.length===0?'🛒 Alles vorhanden':`🛒 ${missing.length} fehlende in den Korb`}</button>
         <button class="btn btn-outline btn-sm" onclick="editRecipe('${id}')">✏️ Bearbeiten</button>
+        <button class="btn btn-outline btn-sm" onclick="printRecipe()" title="Rezept drucken">🖨 Drucken</button>
         <button class="btn btn-red btn-sm" onclick="deleteRecipe('${id}')">🗑</button>
       </div>
     `;
@@ -1715,6 +1716,19 @@ window.editRecipe=(id)=>{
 };
 
 window.cancelRecipeForm=()=>showPage('recipes-page');
+
+// ─── PRINT RECIPE ───
+// Toggelt eine Body-Klasse, damit das @media print im app.css greift.
+// Cleanup über afterprint-Event (egal ob User druckt oder Dialog abbricht).
+window.printRecipe = () => {
+  document.body.classList.add('printing-recipe');
+  const cleanup = () => {
+    document.body.classList.remove('printing-recipe');
+    window.removeEventListener('afterprint', cleanup);
+  };
+  window.addEventListener('afterprint', cleanup);
+  window.print();
+};
 
 window.addIngRow=(d={})=>{
   const row=document.createElement('div');
