@@ -9,7 +9,19 @@
     "families": {
       "$familyId": {
         ".read": "auth != null && data.child('members').child(auth.uid).exists()",
-        ".write": "auth != null && ((newData.exists() && (data.child('members').child(auth.uid).exists() || !data.exists())) || (!newData.exists() && data.exists() && data.child('members').child(auth.uid).child('role').val() === 'admin'))",
+        ".write": "auth != null && ((newData.exists() && !data.exists() && newData.child('members').child(auth.uid).child('role').val() === 'admin') || (data.exists() && !newData.exists() && data.child('members').child(auth.uid).child('role').val() === 'admin'))",
+        "name": {
+          ".write": "auth != null && data.parent().child('members').child(auth.uid).child('role').val() === 'admin'"
+        },
+        "code": {
+          ".write": "auth != null && data.parent().child('members').child(auth.uid).child('role').val() === 'admin'"
+        },
+        "createdBy": {
+          ".write": "auth != null && data.parent().child('members').child(auth.uid).child('role').val() === 'admin'"
+        },
+        "createdAt": {
+          ".write": "auth != null && data.parent().child('members').child(auth.uid).child('role').val() === 'admin'"
+        },
         "members": {
           "$memberId": {
             ".write": "auth != null && (data.parent().parent().child('members').child(auth.uid).child('role').val() === 'admin' || (auth.uid === $memberId && !data.exists() && newData.child('joinCode').isString() && root.child('familyCodes').child(newData.child('joinCode').val()).val() === $familyId) || (auth.uid === $memberId && data.exists() && !newData.exists()))",
@@ -17,6 +29,21 @@
               ".validate": "newData.isString() && (data.parent().parent().parent().child('members').child(auth.uid).child('role').val() === 'admin' || (auth.uid === $memberId && !data.exists()))"
             }
           }
+        },
+        "pantry": {
+          ".write": "auth != null && data.parent().child('members').child(auth.uid).exists()"
+        },
+        "staples": {
+          ".write": "auth != null && data.parent().child('members').child(auth.uid).exists()"
+        },
+        "recipes": {
+          ".write": "auth != null && data.parent().child('members').child(auth.uid).exists()"
+        },
+        "shoppingList": {
+          ".write": "auth != null && data.parent().child('members').child(auth.uid).exists()"
+        },
+        "weekPlan": {
+          ".write": "auth != null && data.parent().child('members').child(auth.uid).exists()"
         }
       }
     },
