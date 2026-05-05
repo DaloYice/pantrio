@@ -287,4 +287,216 @@ describe('pantrio – RTDB Security Rules', () => {
       await assertFails(anon().ref('familyCodes').once('value'));
     });
   });
+
+  describe('Cascade-Schutz: Parent-Overwrite', () => {
+    beforeEach(async () => {
+      await seed(async (db) => {
+        await db.ref('families/-fam1').set({
+          name: 'Familie A',
+          code: 'ORIG',
+          members: {
+            bob: { role: 'admin' },
+            alice: { role: 'member' },
+          },
+        });
+      });
+    });
+
+    it('blockt Member, das ganze Family-Tree mit anderem Member-Set zu überschreiben (Kick via Parent)', async () => {
+      await assertFails(
+        authed('alice').ref('families/-fam1').set({
+          name: 'Hijack',
+          members: { alice: { role: 'member' } },
+        })
+      );
+    });
+
+    it('blockt Member, members-Knoten auf leer zu setzen (vandal kicked all)', async () => {
+      await assertFails(
+        authed('alice').ref('families/-fam1').set({
+          name: 'Hijack',
+          members: {},
+        })
+      );
+    });
+
+    it('blockt Member, andere Member direkt zu kicken via member-slot remove', async () => {
+      await assertFails(
+        authed('alice').ref('families/-fam1/members/bob').remove()
+      );
+    });
+
+    it('erlaubt Admin, andere Member zu kicken', async () => {
+      await assertSucceeds(
+        authed('bob').ref('families/-fam1/members/alice').remove()
+      );
+    });
+
+    it('erlaubt Member, sich selbst zu entfernen (self-leave)', async () => {
+      await assertSucceeds(
+        authed('alice').ref('families/-fam1/members/alice').remove()
+      );
+    });
+  });
+
+  describe('Cascade-Schutz: code/name/meta-Felder', () => {
+    beforeEach(async () => {
+      await seed(async (db) => {
+        await db.ref('families/-fam1').set({
+          name: 'Familie A',
+          code: 'ORIG',
+          createdBy: 'bob',
+          createdAt: 1000,
+          members: {
+            bob: { role: 'admin' },
+            alice: { role: 'member' },
+          },
+        });
+      });
+    });
+
+    it('blockt Member, families/code direkt zu überschreiben', async () => {
+      await assertFails(
+        authed('alice').ref('families/-fam1/code').set('PWN')
+      );
+    });
+
+    it('erlaubt Admin, families/code zu rotieren', async () => {
+      await assertSucceeds(
+        authed('bob').ref('families/-fam1/code').set('NEWCODE')
+      );
+    });
+
+    it('blockt Member, families/name zu ändern', async () => {
+      await assertFails(
+        authed('alice').ref('families/-fam1/name').set('Vandalism')
+      );
+    });
+
+    it('erlaubt Admin, families/name zu ändern', async () => {
+      await assertSucceeds(
+        authed('bob').ref('families/-fam1/name').set('Renamed')
+      );
+    });
+
+    it('blockt Member, createdBy zu manipulieren', async () => {
+      await assertFails(
+        authed('alice').ref('families/-fam1/createdBy').set('alice')
+      );
+    });
+  });
+
+  describe('Member-Schreibrechte auf Familieninhalte', () => {
+    beforeEach(async () => {
+      await seed(async (db) => {
+        await db.ref('families/-fam1').set({
+          name: 'Familie A',
+          members: {
+            bob: { role: 'admin' },
+            alice: { role: 'member' },
+          },
+        });
+      });
+    });
+
+    it('erlaubt Member, Pantry-Items zu schreiben', async () => {
+      await assertSucceeds(
+        authed('alice').ref('families/-fam1/pantry/item1').set({ name: 'Tomate', amount: 5 })
+      );
+    });
+
+    it('erlaubt Member, Rezepte zu schreiben', async () => {
+      await assertSucceeds(
+        authed('alice').ref('families/-fam1/recipes/r1').set({ name: 'Pasta', ingredients: [] })
+      );
+    });
+
+    it('erlaubt Member, Staples zu schreiben', async () => {
+      await assertSucceeds(
+        authed('alice').ref('families/-fam1/staples/s1').set({ name: 'Salz' })
+      );
+    });
+
+    it('erlaubt Member, Einkaufsliste zu schreiben', async () => {
+      await assertSucceeds(
+        authed('alice').ref('families/-fam1/shoppingList/key1').set({ name: 'Milch', checked: false })
+      );
+    });
+
+    it('erlaubt Member, Wochenplan zu schreiben', async () => {
+      await assertSucceeds(
+        authed('alice').ref('families/-fam1/weekPlan/Montag/Mittag').set('r1')
+      );
+    });
+
+    it('blockt Nicht-Member, Pantry-Items zu schreiben', async () => {
+      await assertFails(
+        authed('charlie').ref('families/-fam1/pantry/item1').set({ name: 'Hijack' })
+      );
+    });
+
+    it('blockt Schreiben auf unbekanntes Subfeld (default-deny)', async () => {
+      await assertFails(
+        authed('alice').ref('families/-fam1/auditLog/entry1').set({ action: 'foo' })
+      );
+    });
+  });
+
+  describe('Familien-Erstellung', () => {
+    it('erlaubt User, neue Familie mit sich als Admin anzulegen', async () => {
+      await assertSucceeds(
+        authed('alice').ref('families/-newfam').set({
+          name: 'Neue Familie',
+          code: 'INIT',
+          createdBy: 'alice',
+          createdAt: 1000,
+          members: { alice: { role: 'admin' } },
+        })
+      );
+    });
+
+    it('blockt User, neue Familie ohne sich als Member anzulegen', async () => {
+      await assertFails(
+        authed('alice').ref('families/-newfam').set({
+          name: 'Steal',
+          members: { bob: { role: 'admin' } },
+        })
+      );
+    });
+
+    it('blockt User, neue Familie mit sich als Member (statt Admin) anzulegen', async () => {
+      await assertFails(
+        authed('alice').ref('families/-newfam').set({
+          name: 'Half-baked',
+          members: { alice: { role: 'member' } },
+        })
+      );
+    });
+  });
+
+  describe('Familien-Löschung', () => {
+    beforeEach(async () => {
+      await seed(async (db) => {
+        await db.ref('families/-fam1').set({
+          name: 'Familie A',
+          members: {
+            bob: { role: 'admin' },
+            alice: { role: 'member' },
+          },
+        });
+      });
+    });
+
+    it('erlaubt Admin, Familie zu löschen', async () => {
+      await assertSucceeds(
+        authed('bob').ref('families/-fam1').remove()
+      );
+    });
+
+    it('blockt Member, Familie zu löschen', async () => {
+      await assertFails(
+        authed('alice').ref('families/-fam1').remove()
+      );
+    });
+  });
 });
