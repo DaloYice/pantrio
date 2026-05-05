@@ -1201,6 +1201,65 @@ body {
 }
 .remove-btn:hover { border-color: var(--red); color: var(--red); background: var(--red-light); }
 
+/* === Print View (Recipe-Detail) ===
+   Beim Drucken nur das Rezept-Detail anzeigen, App-Chrome und interaktive
+   Elemente ausblenden, schwarz-auf-weiß für Markt/Küche-Tauglichkeit. */
+@media print {
+  /* Alle Body-Inhalte unsichtbar, nur Detail-Content sichtbar */
+  body * { visibility: hidden; }
+  body.printing-recipe #detail-content,
+  body.printing-recipe #detail-content * { visibility: visible; }
+
+  /* Nur das aktive Detail an Position 0 setzen (kein Topbar/Bottom-Nav-Whitespace) */
+  body.printing-recipe #detail-content {
+    position: absolute;
+    left: 0; top: 0; right: 0;
+    padding: 0;
+    margin: 0;
+    width: 100%;
+    background: white !important;
+    color: black !important;
+  }
+
+  /* Buttons und sonstige Aktionen nicht drucken */
+  body.printing-recipe .detail-actions,
+  body.printing-recipe .portions-bar { display: none !important; }
+
+  /* Lesbarkeit: Tags/Section-Header sauber, Zutaten/Schritte zusammenhalten */
+  body.printing-recipe .detail-hero { padding: 0 0 var(--space-4) 0; border: 0; }
+  body.printing-recipe .detail-emoji { font-size: 56px; }
+  body.printing-recipe .detail-title { font-size: 28px; font-weight: 700; }
+  body.printing-recipe .detail-tags .tag {
+    background: transparent !important;
+    color: black !important;
+    border: 1px solid #999;
+    padding: 2px 8px;
+    margin-right: 6px;
+    font-size: 11px;
+  }
+  body.printing-recipe .detail-desc { font-size: 13px; line-height: 1.5; margin: 8px 0 14px; }
+  body.printing-recipe .ingredients-block,
+  body.printing-recipe .steps-block { page-break-inside: avoid; margin-bottom: 16px; }
+  body.printing-recipe .block-header { font-size: 16px; font-weight: 700; border-bottom: 1px solid #999; padding-bottom: 4px; margin-bottom: 8px; }
+  body.printing-recipe .ingredient-row-item { display: flex; gap: 12px; padding: 4px 0; border-bottom: 1px dotted #ccc; font-size: 13px; }
+  body.printing-recipe .ing-status,
+  body.printing-recipe .ing-missing { display: none !important; }
+  body.printing-recipe .ing-name-col { flex: 1; }
+  body.printing-recipe .step-row-item { display: flex; gap: 10px; padding: 6px 0; font-size: 13px; page-break-inside: avoid; }
+  body.printing-recipe .step-num {
+    flex-shrink: 0;
+    width: 22px; height: 22px;
+    border: 1px solid #333;
+    border-radius: 50%;
+    text-align: center;
+    line-height: 20px;
+    font-weight: 700;
+    font-size: 11px;
+  }
+
+  @page { margin: 1.5cm; }
+}
+
 .add-row-btn {
   width: 100%;
   padding: 10px;
