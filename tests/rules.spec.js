@@ -499,4 +499,120 @@ describe('pantrio – RTDB Security Rules', () => {
       );
     });
   });
+
+  describe('Längen-/Format-Validierung', () => {
+    beforeEach(async () => {
+      await seed(async (db) => {
+        await db.ref('families/-fam1').set({
+          name: 'Familie A',
+          code: 'ORIG',
+          members: {
+            bob: { role: 'admin' },
+            alice: { role: 'member' },
+          },
+        });
+      });
+    });
+
+    // ── Familien-Name ──
+    it('erlaubt Family-Name an der Boundary (80 Zeichen)', async () => {
+      const name80 = 'x'.repeat(80);
+      await assertSucceeds(
+        authed('bob').ref('families/-fam1/name').set(name80)
+      );
+    });
+
+    it('blockt Family-Name über Boundary (81 Zeichen)', async () => {
+      const name81 = 'x'.repeat(81);
+      await assertFails(
+        authed('bob').ref('families/-fam1/name').set(name81)
+      );
+    });
+
+    it('blockt leeren Family-Name', async () => {
+      await assertFails(
+        authed('bob').ref('families/-fam1/name').set('')
+      );
+    });
+
+    // ── Code ──
+    it('erlaubt Code an Untergrenze (4 Zeichen)', async () => {
+      await assertSucceeds(
+        authed('bob').ref('families/-fam1/code').set('ABCD')
+      );
+    });
+
+    it('blockt zu kurzen Code (3 Zeichen)', async () => {
+      await assertFails(
+        authed('bob').ref('families/-fam1/code').set('ABC')
+      );
+    });
+
+    it('blockt zu langen Code (25 Zeichen)', async () => {
+      await assertFails(
+        authed('bob').ref('families/-fam1/code').set('A'.repeat(25))
+      );
+    });
+
+    // ── Role-Enum ──
+    it('blockt Admin, fremde Rolle auf nicht-enum-Wert zu setzen', async () => {
+      await assertFails(
+        authed('bob').ref('families/-fam1/members/alice/role').set('superuser')
+      );
+    });
+
+    it('erlaubt Admin, Rolle auf "member" zu setzen', async () => {
+      await assertSucceeds(
+        authed('bob').ref('families/-fam1/members/alice/role').set('member')
+      );
+    });
+
+    // ── Pantry / Recipe / Shopping ──
+    it('erlaubt Pantry-Name an Boundary (80 Zeichen)', async () => {
+      await assertSucceeds(
+        authed('alice').ref('families/-fam1/pantry/i1').set({ name: 'a'.repeat(80) })
+      );
+    });
+
+    it('blockt Pantry-Name über Boundary (81 Zeichen)', async () => {
+      await assertFails(
+        authed('alice').ref('families/-fam1/pantry/i1').set({ name: 'a'.repeat(81) })
+      );
+    });
+
+    it('blockt überlange Recipe-Description (2001 Zeichen)', async () => {
+      await assertFails(
+        authed('alice').ref('families/-fam1/recipes/r1').set({
+          name: 'Pasta',
+          description: 'x'.repeat(2001),
+        })
+      );
+    });
+
+    it('erlaubt Recipe-Description an Boundary (2000 Zeichen)', async () => {
+      await assertSucceeds(
+        authed('alice').ref('families/-fam1/recipes/r1').set({
+          name: 'Pasta',
+          description: 'x'.repeat(2000),
+        })
+      );
+    });
+
+    it('blockt überlange Shopping-Item-Name', async () => {
+      await assertFails(
+        authed('alice').ref('families/-fam1/shoppingList/k1').set({
+          name: 'a'.repeat(81),
+        })
+      );
+    });
+
+    it('blockt überlange Pantry-Emoji (>8 Zeichen)', async () => {
+      await assertFails(
+        authed('alice').ref('families/-fam1/pantry/i1').set({
+          name: 'Tomate',
+          emoji: 'a'.repeat(9),
+        })
+      );
+    });
+  });
 });
