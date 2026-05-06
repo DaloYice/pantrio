@@ -502,7 +502,7 @@ window.register = async()=>{
   try{
     const c=await createUserWithEmailAndPassword(auth,email,pw);
     await updateProfile(c.user,{displayName:name});
-    await set(ref(db,`users/${c.user.uid}`),{name,email,createdAt:Date.now()});
+    await update(ref(db,`users/${c.user.uid}`),{name,email,createdAt:Date.now()});
     await sendEmailVerification(c.user);
   }catch(e){ authErr(friendlyErr(e.code)); }
 };
