@@ -32,6 +32,58 @@ if ('serviceWorker' in navigator) {
   });
 }
 
+// ─── EVENT DELEGATION ───
+// Replaces inline-Handlers (onclick, oninput, ...) so we can ship strict CSP
+// without 'unsafe-inline' on script-src. Pattern:
+//   <button data-action="funcName">...</button>           → window.funcName()
+//   <button data-action="funcName" data-arg="x">...       → window.funcName('x')
+//   <input  data-input-action="funcName">                 → window.funcName(el.value) on input
+//   <input  data-enter-action="funcName">                 → window.funcName() on Enter
+//   <div    data-modal-overlay="modalId">                 → closeModal('modalId') on overlay-click
+function callAction(name, arg, el){
+  const fn = window[name];
+  if (typeof fn !== 'function'){
+    console.warn('[delegation] unknown action:', name);
+    return;
+  }
+  return fn(arg, el);
+}
+// Helper actions for delegation (formerly inline-handler use cases)
+window.removeParentRow = (_arg, el) => { if(el && el.parentElement) el.parentElement.remove(); };
+window.openDayModalDelegated = (_arg, el) => {
+  if (typeof window.openDayModal === 'function') window.openDayModal(el.dataset.day, el.dataset.meal);
+};
+window.selectPantryIngredientFromAttr = (_arg, el) => {
+  try {
+    const data = JSON.parse(el.getAttribute('data-payload') || '{}');
+    if (typeof window.selectPantryIngredient === 'function') window.selectPantryIngredient(data);
+  } catch(e){ console.warn('[delegation] payload parse failed:', e); }
+};
+document.addEventListener('click', (e) => {
+  const overlay = e.target.closest('[data-modal-overlay]');
+  if (overlay && e.target === overlay){
+    const id = overlay.getAttribute('data-modal-overlay');
+    if (typeof window.closeModal === 'function') window.closeModal(id);
+    return;
+  }
+  const t = e.target.closest('[data-action]');
+  if (!t) return;
+  const action = t.getAttribute('data-action');
+  const arg = t.getAttribute('data-arg');
+  callAction(action, arg === null ? undefined : arg, t);
+});
+document.addEventListener('input', (e) => {
+  const t = e.target.closest('[data-input-action]');
+  if (!t) return;
+  callAction(t.getAttribute('data-input-action'), t.value, t);
+});
+document.addEventListener('keydown', (e) => {
+  if (e.key !== 'Enter') return;
+  const t = e.target.closest('[data-enter-action]');
+  if (!t) return;
+  callAction(t.getAttribute('data-enter-action'), undefined, t);
+});
+
 // ─── THEME ───
 const THEME_KEY = 'pantrio.theme';
 function setTheme(choice){
@@ -1068,7 +1120,7 @@ function renderAllFamiliesList(){
         <div class="fli-name">${esc(f.name||'Familie')}</div>
         <div class="fli-role">${f.role==='admin'?'👑 Admin':'👤 Mitglied'}${fid===familyId?' · Aktiv':''}</div>
       </div>
-      ${fid!==familyId?`<button class="btn btn-secondary btn-sm" onclick="switchToFamily('${fid}')">Wechseln</button>`:'<span style="font-size:12px;color:var(--green);font-weight:700">✓</span>'}
+      ${fid!==familyId?`<button class="btn btn-secondary btn-sm" data-action="switchToFamily" data-arg="${fid}">Wechseln</button>`:'<span style="font-size:12px;color:var(--green);font-weight:700">✓</span>'}
     `;
     container.appendChild(div);
   });
@@ -1106,7 +1158,7 @@ function renderSwitcherFamilies(){
         <div class="fli-name">${esc(f.name||'Familie')}</div>
         <div class="fli-role">${f.role==='admin'?'👑 Admin':'👤 Mitglied'}</div>
       </div>
-      ${fid===familyId?'<span style="font-size:12px;color:var(--green);font-weight:700">Aktiv ✓</span>':`<button class="btn btn-secondary btn-sm" onclick="switchToFamily('${fid}')">Wechseln</button>`}
+      ${fid===familyId?'<span style="font-size:12px;color:var(--green);font-weight:700">Aktiv ✓</span>':`<button class="btn btn-secondary btn-sm" data-action="switchToFamily" data-arg="${fid}">Wechseln</button>`}
     `;
     list.appendChild(div);
   });
@@ -1212,7 +1264,7 @@ window.searchPantryIngredients=(query)=>{
   }
 
   results.innerHTML = matches.slice(0,8).map(m=>`
-    <div onclick="selectPantryIngredient(${JSON.stringify(m).replace(/"/g,'&quot;')})"
+    <div data-action="selectPantryIngredientFromAttr" data-payload="${JSON.stringify(m).replace(/"/g,'&quot;')}"
       style="padding:11px 14px;display:flex;align-items:center;gap:10px;cursor:pointer;border-bottom:1px solid var(--border);transition:background 0.1s"
       onmouseover="this.style.background='var(--surface2)'" onmouseout="this.style.background=''">
       <span style="font-size:22px">${esc(m.emoji)}</span>
@@ -1333,10 +1385,10 @@ function renderPantry(search=''){
 
   if(items.length===0){
     if(total===0){
-      list.innerHTML=`<div class="empty-state"><div class="ei" aria-hidden="true">🥕</div><h3>Dein Vorrat ist noch leer</h3><p>Trag ein, was du zuhause hast – damit Pantrio dir passende Rezepte vorschlagen kann.</p><div class="empty-state-actions"><button class="btn btn-primary" type="button" onclick="toggleAddPantryForm()">＋ Vorrat hinzufügen</button></div></div>`;
+      list.innerHTML=`<div class="empty-state"><div class="ei" aria-hidden="true">🥕</div><h3>Dein Vorrat ist noch leer</h3><p>Trag ein, was du zuhause hast – damit Pantrio dir passende Rezepte vorschlagen kann.</p><div class="empty-state-actions"><button class="btn btn-primary" type="button" data-action="toggleAddPantryForm">＋ Vorrat hinzufügen</button></div></div>`;
     } else {
       const hasFilter=activePantryCategory!=='Alle'||search;
-      list.innerHTML=`<div class="empty-state"><div class="ei" aria-hidden="true">🔍</div><h3>Nichts in dieser Kategorie</h3><p>Du hast Vorräte in anderen Kategorien.</p><div class="empty-state-actions"><button class="btn btn-ghost" type="button" onclick="resetPantryFilter()">Alle anzeigen</button></div></div>`;
+      list.innerHTML=`<div class="empty-state"><div class="ei" aria-hidden="true">🔍</div><h3>Nichts in dieser Kategorie</h3><p>Du hast Vorräte in anderen Kategorien.</p><div class="empty-state-actions"><button class="btn btn-ghost" type="button" data-action="resetPantryFilter">Alle anzeigen</button></div></div>`;
     }
     return;
   }
@@ -1365,7 +1417,7 @@ function renderPantry(search=''){
         </div>
         <div class="status-dot status-${esc(p.status||'ok')}"></div>
         <div class="pantry-item-actions">
-          <button class="icon-btn delete" onclick="deletePantryItem('${id}')">×</button>
+          <button class="icon-btn delete" data-action="deletePantryItem" data-arg="${id}">×</button>
         </div>`;
       section.appendChild(div);
     });
@@ -1476,8 +1528,8 @@ function renderStaples(){
           <div style="font-size:12px;color:var(--text2)">${s.amount?esc(s.amount)+' '+esc(s.unit||''):''}${s.amount&&s.category?' · ':''}${esc(s.category||'')}</div>
         </div>
         <div style="display:flex;gap:6px">
-          ${!inPantry?`<button class="icon-btn" onclick="addStapleToShopManual('${id}')" title="Zur Einkaufsliste" style="color:var(--green)">🛒</button>`:''}
-          <button class="icon-btn delete" onclick="deleteStaple('${id}')">×</button>
+          ${!inPantry?`<button class="icon-btn" data-action="addStapleToShopManual" data-arg="${id}" title="Zur Einkaufsliste" style="color:var(--green)">🛒</button>`:''}
+          <button class="icon-btn delete" data-action="deleteStaple" data-arg="${id}">×</button>
         </div>
       `;
       list.appendChild(div);
@@ -1644,9 +1696,9 @@ function renderRecipes(search=''){
   if(items.length===0){
     const total=Object.keys(recipes).length;
     if(total===0){
-      container.innerHTML=`<div class="empty-state"><div class="ei" aria-hidden="true">📖</div><h3>Noch keine Rezepte</h3><p>Leg dein erstes Rezept an oder importiere ein paar Klassiker, um loszulegen.</p><div class="empty-state-actions"><button class="btn btn-primary" type="button" onclick="showAddRecipePage()">＋ Rezept hinzufügen</button></div></div>`;
+      container.innerHTML=`<div class="empty-state"><div class="ei" aria-hidden="true">📖</div><h3>Noch keine Rezepte</h3><p>Leg dein erstes Rezept an oder importiere ein paar Klassiker, um loszulegen.</p><div class="empty-state-actions"><button class="btn btn-primary" type="button" data-action="showAddRecipePage">＋ Rezept hinzufügen</button></div></div>`;
     } else {
-      container.innerHTML=`<div class="empty-state"><div class="ei" aria-hidden="true">🔍</div><h3>Nichts gefunden</h3><p>Keine Rezepte passen zu deinem Filter (${esc(activeRecipeFilter)}).</p><div class="empty-state-actions"><button class="btn btn-ghost" type="button" onclick="resetRecipeFilter()">Filter zurücksetzen</button></div></div>`;
+      container.innerHTML=`<div class="empty-state"><div class="ei" aria-hidden="true">🔍</div><h3>Nichts gefunden</h3><p>Keine Rezepte passen zu deinem Filter (${esc(activeRecipeFilter)}).</p><div class="empty-state-actions"><button class="btn btn-ghost" type="button" data-action="resetRecipeFilter">Filter zurücksetzen</button></div></div>`;
     }
     return;
   }
@@ -1771,10 +1823,10 @@ window.showDetail=(id)=>{
       `:''}
 
       <div class="detail-actions">
-        <button class="btn btn-primary btn-sm" onclick="addRecipeToShopDirect('${id}')" ${missing.length===0?'disabled':''} title="${missing.length===0?'Alle Zutaten sind im Vorrat':'Nur fehlende Zutaten werden hinzugefügt'}">${missing.length===0?'🛒 Alles vorhanden':`🛒 ${missing.length} fehlende in den Korb`}</button>
-        <button class="btn btn-outline btn-sm" onclick="editRecipe('${id}')">✏️ Bearbeiten</button>
-        <button class="btn btn-outline btn-sm" onclick="printRecipe()" title="Rezept drucken">🖨 Drucken</button>
-        <button class="btn btn-red btn-sm" onclick="deleteRecipe('${id}')">🗑</button>
+        <button class="btn btn-primary btn-sm" data-action="addRecipeToShopDirect" data-arg="${id}" ${missing.length===0?'disabled':''} title="${missing.length===0?'Alle Zutaten sind im Vorrat':'Nur fehlende Zutaten werden hinzugefügt'}">${missing.length===0?'🛒 Alles vorhanden':`🛒 ${missing.length} fehlende in den Korb`}</button>
+        <button class="btn btn-outline btn-sm" data-action="editRecipe" data-arg="${id}">✏️ Bearbeiten</button>
+        <button class="btn btn-outline btn-sm" data-action="printRecipe" title="Rezept drucken">🖨 Drucken</button>
+        <button class="btn btn-red btn-sm" data-action="deleteRecipe" data-arg="${id}">🗑</button>
       </div>
     `;
 
@@ -1865,14 +1917,14 @@ window.printRecipe = () => {
 window.addIngRow=(d={})=>{
   const row=document.createElement('div');
   row.className='ing-form-row';
-  row.innerHTML=`<input type="text" placeholder="Nudeln" value="${esc(d.name||'')}" class="i-name"><input type="number" placeholder="200" value="${esc(d.amount||'')}" class="i-amount" min="0" step="0.1"><input type="text" placeholder="g" value="${esc(d.unit||'')}" class="i-unit"><button class="remove-btn" onclick="this.parentElement.remove()">×</button>`;
+  row.innerHTML=`<input type="text" placeholder="Nudeln" value="${esc(d.name||'')}" class="i-name"><input type="number" placeholder="200" value="${esc(d.amount||'')}" class="i-amount" min="0" step="0.1"><input type="text" placeholder="g" value="${esc(d.unit||'')}" class="i-unit"><button class="remove-btn" data-action="removeParentRow">×</button>`;
   document.getElementById('r-ingredients').appendChild(row);
 };
 
 window.addStepRow=(d='')=>{
   const row=document.createElement('div');
   row.className='step-form-row';
-  row.innerHTML=`<textarea rows="2" placeholder="Schritt beschreiben…" class="s-text">${esc(d)}</textarea><button class="remove-btn" onclick="this.parentElement.remove()" style="margin-top:2px">×</button>`;
+  row.innerHTML=`<textarea rows="2" placeholder="Schritt beschreiben…" class="s-text">${esc(d)}</textarea><button class="remove-btn" data-action="removeParentRow" style="margin-top:2px">×</button>`;
   document.getElementById('r-steps').appendChild(row);
 };
 
@@ -2089,7 +2141,7 @@ function renderShopping(){
   }
 
   if(items.length===0){
-    container.innerHTML=`<div class="empty-state"><div class="ei" aria-hidden="true">🛒</div><h3>Einkaufsliste ist leer</h3><p>Füge Zutaten manuell hinzu, oder generiere die Liste automatisch aus deinem Wochenplan.</p><div class="empty-state-actions"><button class="btn btn-primary" type="button" onclick="addManualShopItem()">＋ Manuell hinzufügen</button><button class="btn btn-ghost" type="button" onclick="generateShoppingFromWeek()">📅 Aus Wochenplan</button></div></div>`;
+    container.innerHTML=`<div class="empty-state"><div class="ei" aria-hidden="true">🛒</div><h3>Einkaufsliste ist leer</h3><p>Füge Zutaten manuell hinzu, oder generiere die Liste automatisch aus deinem Wochenplan.</p><div class="empty-state-actions"><button class="btn btn-primary" type="button" data-action="addManualShopItem">＋ Manuell hinzufügen</button><button class="btn btn-ghost" type="button" data-action="generateShoppingFromWeek">📅 Aus Wochenplan</button></div></div>`;
     return;
   }
 
@@ -2105,7 +2157,7 @@ function renderShopping(){
   Object.entries(groups).forEach(([cat,items])=>{
     html+=`<div class="shopping-group"><div class="shopping-group-header">${CAT_ICONS[cat]||'📦'} ${esc(cat)}</div>`;
     items.forEach(([k,v])=>{
-      html+=`<div class="shopping-item" onclick="toggleShopItem('${k}')">
+      html+=`<div class="shopping-item" data-action="toggleShopItem" data-arg="${k}">
         <div class="checkbox"></div>
         <span class="si-name">${esc(v.name)}</span>
         ${v.amount?`<span class="si-amount">${esc(v.amount)} ${esc(v.unit||'')}</span>`:''}
@@ -2118,7 +2170,7 @@ function renderShopping(){
   if(checked.length>0){
     html+=`<div class="shopping-group"><div class="shopping-group-header">✓ Erledigt (${checked.length})</div>`;
     checked.forEach(([k,v])=>{
-      html+=`<div class="shopping-item checked" onclick="toggleShopItem('${k}')">
+      html+=`<div class="shopping-item checked" data-action="toggleShopItem" data-arg="${k}">
         <div class="checkbox"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg></div>
         <span class="si-name">${esc(v.name)}</span>
       </div>`;
@@ -2158,7 +2210,7 @@ function renderWeekGrid(){
     card.innerHTML=`<div class="day-header"><span class="day-name">${day}</span></div><div class="day-meals">
       ${MEALS.map(meal=>{
         const r=dayData[meal]?recipes[dayData[meal]]:null;
-        return `<div class="meal-slot ${r?'filled':''}" onclick="openDayModal('${day}','${meal}')">
+        return `<div class="meal-slot ${r?'filled':''}" data-action="openDayModalDelegated" data-day="${day}" data-meal="${meal}">
           <span class="meal-slot-label">${meal}</span>
           ${r?`<span class="meal-slot-emoji">${esc(r.emoji||'🍽')}</span><span class="meal-slot-content">${esc(r.name)}</span>`
              :`<span class="meal-slot-empty">+ Rezept wählen</span>`}
