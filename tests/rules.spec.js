@@ -860,12 +860,32 @@ describe('pantrio – RTDB Security Rules', () => {
       );
     });
 
-    it('erlaubt initiales Multi-Set bei Registrierung', async () => {
+    it('erlaubt initiales Multi-Update bei Registrierung', async () => {
+      // App nutzt update() statt set() für Registrierung, weil set() auf Parent
+      // eine Top-Level-.write bräuchte, die wir bewusst nicht mehr haben
+      // (sonst könnte User seinen familyAuditLog manipulieren).
       await assertSucceeds(
-        authed('alice').ref('users/alice').set({
+        authed('alice').ref('users/alice').update({
           name: 'Alice',
           email: 'alice@example.com',
           createdAt: 1700000000000,
+        })
+      );
+    });
+
+    it('blockt set() auf User-Parent (Schutz vor Audit-Log-Tampering via Multi-Set)', async () => {
+      await seed(async (db) => {
+        await db.ref('users/alice/familyAuditLog/-e1').set({
+          action: 'delete-family',
+          actorUid: 'alice',
+          ts: 1700000000000,
+        });
+      });
+      // Ein set() auf users/alice würde familyAuditLog implizit löschen.
+      // Da Top-Level keine .write-Rule mehr hat, wird das geblockt.
+      await assertFails(
+        authed('alice').ref('users/alice').set({
+          name: 'New Name',
         })
       );
     });
