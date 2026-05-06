@@ -615,4 +615,146 @@ describe('pantrio – RTDB Security Rules', () => {
       );
     });
   });
+
+  describe('Audit-Log', () => {
+    const TS = { '.sv': 'timestamp' }; // Server-Timestamp-Sentinel
+
+    beforeEach(async () => {
+      await seed(async (db) => {
+        await db.ref('families/-fam1').set({
+          name: 'Familie A',
+          code: 'ORIG',
+          members: {
+            bob: { role: 'admin' },
+            alice: { role: 'member' },
+          },
+        });
+      });
+    });
+
+    it('erlaubt Member, gültigen Eintrag mit Server-Timestamp anzulegen', async () => {
+      await assertSucceeds(
+        authed('alice').ref('families/-fam1/auditLog').push({
+          action: 'rotate-code',
+          actorUid: 'alice',
+          ts: TS,
+        })
+      );
+    });
+
+    it('erlaubt Eintrag mit optionalen Feldern (targetId/targetName/meta/actorName)', async () => {
+      await assertSucceeds(
+        authed('alice').ref('families/-fam1/auditLog').push({
+          action: 'delete-recipe',
+          actorUid: 'alice',
+          actorName: 'Alice',
+          targetId: '-rec1',
+          targetName: 'Spaghetti',
+          meta: 'manual deletion',
+          ts: TS,
+        })
+      );
+    });
+
+    it('blockt Eintrag mit fremder actorUid (Spoofing)', async () => {
+      await assertFails(
+        authed('alice').ref('families/-fam1/auditLog').push({
+          action: 'rotate-code',
+          actorUid: 'bob', // gehört nicht zum Auth-User
+          ts: TS,
+        })
+      );
+    });
+
+    it('blockt Eintrag mit Client-Timestamp statt Server-Timestamp', async () => {
+      await assertFails(
+        authed('alice').ref('families/-fam1/auditLog').push({
+          action: 'rotate-code',
+          actorUid: 'alice',
+          ts: Date.now(), // kein ServerValue.TIMESTAMP
+        })
+      );
+    });
+
+    it('blockt Eintrag von Nicht-Member', async () => {
+      await assertFails(
+        authed('mallory').ref('families/-fam1/auditLog').push({
+          action: 'rotate-code',
+          actorUid: 'mallory',
+          ts: TS,
+        })
+      );
+    });
+
+    it('blockt Eintrag mit unbekannter action', async () => {
+      await assertFails(
+        authed('alice').ref('families/-fam1/auditLog').push({
+          action: 'kick-member', // nicht in der Whitelist
+          actorUid: 'alice',
+          ts: TS,
+        })
+      );
+    });
+
+    it('blockt Eintrag ohne Pflichtfeld (action fehlt)', async () => {
+      await assertFails(
+        authed('alice').ref('families/-fam1/auditLog').push({
+          actorUid: 'alice',
+          ts: TS,
+        })
+      );
+    });
+
+    it('blockt Update auf existierenden Eintrag (append-only)', async () => {
+      await seed(async (db) => {
+        await db.ref('families/-fam1/auditLog/-e1').set({
+          action: 'rotate-code',
+          actorUid: 'alice',
+          ts: 1700000000000,
+        });
+      });
+      await assertFails(
+        authed('alice').ref('families/-fam1/auditLog/-e1').update({ meta: 'tampered' })
+      );
+    });
+
+    it('blockt Delete eines existierenden Eintrags', async () => {
+      await seed(async (db) => {
+        await db.ref('families/-fam1/auditLog/-e1').set({
+          action: 'rotate-code',
+          actorUid: 'alice',
+          ts: 1700000000000,
+        });
+      });
+      await assertFails(
+        authed('alice').ref('families/-fam1/auditLog/-e1').remove()
+      );
+    });
+
+    it('erlaubt Member das Lesen des Audit-Logs', async () => {
+      await seed(async (db) => {
+        await db.ref('families/-fam1/auditLog/-e1').set({
+          action: 'rotate-code',
+          actorUid: 'bob',
+          ts: 1700000000000,
+        });
+      });
+      await assertSucceeds(
+        authed('alice').ref('families/-fam1/auditLog').once('value')
+      );
+    });
+
+    it('blockt Lesen für Nicht-Member', async () => {
+      await seed(async (db) => {
+        await db.ref('families/-fam1/auditLog/-e1').set({
+          action: 'rotate-code',
+          actorUid: 'bob',
+          ts: 1700000000000,
+        });
+      });
+      await assertFails(
+        authed('mallory').ref('families/-fam1/auditLog').once('value')
+      );
+    });
+  });
 });
