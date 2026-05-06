@@ -145,6 +145,31 @@
         ".read": "auth != null",
         ".write": "auth != null && ((newData.exists() && !data.exists() && newData.isString() && root.child('families').child(newData.val()).child('members').child(auth.uid).child('role').val() === 'admin') || (!newData.exists() && data.exists() && root.child('families').child(data.val()).child('members').child(auth.uid).child('role').val() === 'admin'))"
       }
+    },
+    "admins": {
+      "$uid": {
+        ".read": "auth != null && $uid === auth.uid",
+        ".write": "auth != null && (auth.uid === 'ZntXAQlTABT5zKTsMHs9nwHVdpl1' || root.child('admins').child(auth.uid).val() === true)",
+        ".validate": "newData.isBoolean()"
+      }
+    },
+    "feedback": {
+      ".indexOn": ["ts","status"],
+      ".read": "auth != null && (auth.uid === 'ZntXAQlTABT5zKTsMHs9nwHVdpl1' || root.child('admins').child(auth.uid).val() === true)",
+      "$entryId": {
+        ".write": "auth != null && ((!data.exists() && newData.exists() && newData.child('userUid').val() === auth.uid && newData.child('ts').val() === now && newData.child('status').val() === 'new') || (auth.uid === 'ZntXAQlTABT5zKTsMHs9nwHVdpl1' || root.child('admins').child(auth.uid).val() === true))",
+        ".validate": "newData.hasChildren(['type','message','userUid','ts','status'])",
+        "type":      { ".validate": "newData.isString() && (newData.val() === 'bug' || newData.val() === 'wish' || newData.val() === 'other')" },
+        "message":   { ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 2000" },
+        "userUid":   { ".validate": "newData.isString() && newData.val().length <= 128" },
+        "userEmail": { ".validate": "newData.isString() && newData.val().length <= 200" },
+        "ts":        { ".validate": "newData.isNumber()" },
+        "status":    { ".validate": "newData.isString() && (newData.val() === 'new' || newData.val() === 'read' || newData.val() === 'done')" },
+        "version":   { ".validate": "newData.isString() && newData.val().length <= 20" },
+        "page":      { ".validate": "newData.isString() && newData.val().length <= 80" },
+        "ua":        { ".validate": "newData.isString() && newData.val().length <= 300" },
+        "$other":    { ".validate": false }
+      }
     }
   }
 }
