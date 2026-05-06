@@ -361,8 +361,9 @@
 
   <!-- RECIPES -->
   <div id="recipes-page" class="page">
-    <div class="section-title">
-      Rezepte
+    <div class="section-title" style="display:flex;align-items:center;justify-content:space-between;gap:10px">
+      <span>Rezepte</span>
+      <button class="btn btn-outline btn-sm" data-action="showPage" data-arg="marketplace-page">🌍 Marktplatz</button>
     </div>
     <div class="pantry-search">
       <svg class="search-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z"/></svg>
@@ -373,6 +374,34 @@
       <div class="loading"><div class="spinner"></div>Lade Rezepte…</div>
     </div>
     <button class="fab" data-action="showAddRecipePage">+</button>
+  </div>
+
+  <!-- MARKETPLACE -->
+  <div id="marketplace-page" class="page">
+    <div style="margin-bottom:14px">
+      <button class="btn btn-ghost" data-action="showPage" data-arg="recipes-page" style="padding-left:0">← Zurück zu meinen Rezepten</button>
+    </div>
+    <div class="section-title" style="display:flex;align-items:center;gap:10px">🌍 Rezept-Marktplatz</div>
+    <p style="font-size:13px;color:var(--text2);line-height:1.4;margin-bottom:14px">Geteilte Rezepte aus allen Pantrio-Familien. Tipp: ein Rezept übernimmt eine Snapshot-Kopie in deine eigene Sammlung.</p>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">
+      <button class="filter-chip active" id="mp-sort-new" data-action="setMarketplaceSort" data-arg="new" style="padding:6px 12px;border:1px solid var(--border);border-radius:16px;background:var(--green);color:white;font-size:13px;cursor:pointer">Neueste</button>
+      <button class="filter-chip" id="mp-sort-pop" data-action="setMarketplaceSort" data-arg="pop" style="padding:6px 12px;border:1px solid var(--border);border-radius:16px;background:var(--surface);color:var(--text);font-size:13px;cursor:pointer">Beliebt</button>
+    </div>
+    <div class="pantry-search" style="margin-bottom:10px">
+      <svg class="search-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z"/></svg>
+      <input type="text" placeholder="Marktplatz durchsuchen…" data-input-action="filterMarketplace">
+    </div>
+    <div id="marketplace-cards" class="recipe-cards">
+      <div class="loading"><div class="spinner"></div>Lade Marktplatz…</div>
+    </div>
+  </div>
+
+  <!-- MARKETPLACE DETAIL -->
+  <div id="marketplace-detail-page" class="page">
+    <div class="detail-back">
+      <button class="btn btn-ghost" data-action="showPage" data-arg="marketplace-page" style="padding-left:0">← Zurück</button>
+    </div>
+    <div id="marketplace-detail-content"></div>
   </div>
 
   <!-- DETAIL -->
