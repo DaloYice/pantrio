@@ -87,6 +87,7 @@
           ".write": "auth != null && data.parent().child('members').child(auth.uid).exists()"
         },
         "auditLog": {
+          ".indexOn": ["ts"],
           "$entryId": {
             ".write": "auth != null && data.parent().parent().child('members').child(auth.uid).exists() && !data.exists() && newData.exists() && newData.child('actorUid').val() === auth.uid && newData.child('ts').val() === now",
             ".validate": "newData.hasChildren(['action','actorUid','ts'])",
