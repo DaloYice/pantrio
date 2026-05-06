@@ -920,4 +920,225 @@ describe('pantrio – RTDB Security Rules', () => {
       );
     });
   });
+
+  describe('Admin-Pfad + Feedback', () => {
+    const TS = { '.sv': 'timestamp' };
+    // Bootstrap-Admin-UID aus den Rules
+    const ADMIN_UID = 'ZntXAQlTABT5zKTsMHs9nwHVdpl1';
+
+    describe('admins/$uid', () => {
+      it('erlaubt Admin (hartkodiert), neuen Admin einzutragen', async () => {
+        await assertSucceeds(
+          authed(ADMIN_UID).ref('admins/charlie').set(true)
+        );
+      });
+
+      it('blockt Nicht-Admin, sich selbst als Admin einzutragen', async () => {
+        await assertFails(
+          authed('mallory').ref('admins/mallory').set(true)
+        );
+      });
+
+      it('erlaubt User, eigenen Admin-Status zu lesen', async () => {
+        await seed(async (db) => {
+          await db.ref('admins/alice').set(true);
+        });
+        await assertSucceeds(
+          authed('alice').ref('admins/alice').once('value')
+        );
+      });
+
+      it('blockt User, fremden Admin-Status zu lesen', async () => {
+        await seed(async (db) => {
+          await db.ref('admins/bob').set(true);
+        });
+        await assertFails(
+          authed('alice').ref('admins/bob').once('value')
+        );
+      });
+
+      it('erlaubt eingetragenem Admin, weitere Admins anzulegen', async () => {
+        await seed(async (db) => {
+          await db.ref('admins/alice').set(true);
+        });
+        await assertSucceeds(
+          authed('alice').ref('admins/charlie').set(true)
+        );
+      });
+    });
+
+    describe('feedback/$entryId', () => {
+      it('erlaubt User, eigenes Feedback einzureichen', async () => {
+        await assertSucceeds(
+          authed('alice').ref('feedback').push({
+            type: 'bug',
+            message: 'Crash beim Login',
+            userUid: 'alice',
+            ts: TS,
+            status: 'new',
+          })
+        );
+      });
+
+      it('erlaubt optionale Felder (email/version/page/ua)', async () => {
+        await assertSucceeds(
+          authed('alice').ref('feedback').push({
+            type: 'wish',
+            message: 'Dark Mode wäre toll',
+            userUid: 'alice',
+            userEmail: 'alice@example.com',
+            ts: TS,
+            status: 'new',
+            version: '0.9.15',
+            page: 'recipes-page',
+            ua: 'Mozilla/5.0',
+          })
+        );
+      });
+
+      it('blockt Spoofing der userUid', async () => {
+        await assertFails(
+          authed('alice').ref('feedback').push({
+            type: 'bug',
+            message: 'fake',
+            userUid: 'bob',
+            ts: TS,
+            status: 'new',
+          })
+        );
+      });
+
+      it('blockt Client-Timestamp', async () => {
+        await assertFails(
+          authed('alice').ref('feedback').push({
+            type: 'bug',
+            message: 'fake',
+            userUid: 'alice',
+            ts: Date.now(),
+            status: 'new',
+          })
+        );
+      });
+
+      it('blockt initialen status != new', async () => {
+        await assertFails(
+          authed('alice').ref('feedback').push({
+            type: 'bug',
+            message: 'fake',
+            userUid: 'alice',
+            ts: TS,
+            status: 'done',
+          })
+        );
+      });
+
+      it('blockt unbekannten type', async () => {
+        await assertFails(
+          authed('alice').ref('feedback').push({
+            type: 'spam',
+            message: 'x',
+            userUid: 'alice',
+            ts: TS,
+            status: 'new',
+          })
+        );
+      });
+
+      it('blockt zu lange message (>2000)', async () => {
+        await assertFails(
+          authed('alice').ref('feedback').push({
+            type: 'bug',
+            message: 'x'.repeat(2001),
+            userUid: 'alice',
+            ts: TS,
+            status: 'new',
+          })
+        );
+      });
+
+      it('blockt leere message', async () => {
+        await assertFails(
+          authed('alice').ref('feedback').push({
+            type: 'bug',
+            message: '',
+            userUid: 'alice',
+            ts: TS,
+            status: 'new',
+          })
+        );
+      });
+
+      it('blockt Lesen für Nicht-Admin', async () => {
+        await seed(async (db) => {
+          await db.ref('feedback/-e1').set({
+            type: 'bug', message: 'x', userUid: 'alice',
+            ts: 1700000000000, status: 'new',
+          });
+        });
+        await assertFails(
+          authed('alice').ref('feedback').once('value')
+        );
+      });
+
+      it('erlaubt Lesen für Admin', async () => {
+        await seed(async (db) => {
+          await db.ref('feedback/-e1').set({
+            type: 'bug', message: 'x', userUid: 'alice',
+            ts: 1700000000000, status: 'new',
+          });
+        });
+        await assertSucceeds(
+          authed(ADMIN_UID).ref('feedback').once('value')
+        );
+      });
+
+      it('blockt User-Update auf eigenes Feedback (append-only)', async () => {
+        await seed(async (db) => {
+          await db.ref('feedback/-e1').set({
+            type: 'bug', message: 'x', userUid: 'alice',
+            ts: 1700000000000, status: 'new',
+          });
+        });
+        await assertFails(
+          authed('alice').ref('feedback/-e1/status').set('done')
+        );
+      });
+
+      it('erlaubt Admin-Update (status-Wechsel)', async () => {
+        await seed(async (db) => {
+          await db.ref('feedback/-e1').set({
+            type: 'bug', message: 'x', userUid: 'alice',
+            ts: 1700000000000, status: 'new',
+          });
+        });
+        await assertSucceeds(
+          authed(ADMIN_UID).ref('feedback/-e1/status').set('done')
+        );
+      });
+
+      it('erlaubt Admin-Delete', async () => {
+        await seed(async (db) => {
+          await db.ref('feedback/-e1').set({
+            type: 'bug', message: 'x', userUid: 'alice',
+            ts: 1700000000000, status: 'new',
+          });
+        });
+        await assertSucceeds(
+          authed(ADMIN_UID).ref('feedback/-e1').remove()
+        );
+      });
+
+      it('blockt User-Delete eines fremden Feedbacks', async () => {
+        await seed(async (db) => {
+          await db.ref('feedback/-e1').set({
+            type: 'bug', message: 'x', userUid: 'alice',
+            ts: 1700000000000, status: 'new',
+          });
+        });
+        await assertFails(
+          authed('mallory').ref('feedback/-e1').remove()
+        );
+      });
+    });
+  });
 });
