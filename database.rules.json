@@ -85,6 +85,20 @@
         },
         "weekPlan": {
           ".write": "auth != null && data.parent().child('members').child(auth.uid).exists()"
+        },
+        "auditLog": {
+          "$entryId": {
+            ".write": "auth != null && data.parent().parent().child('members').child(auth.uid).exists() && !data.exists() && newData.exists() && newData.child('actorUid').val() === auth.uid && newData.child('ts').val() === now",
+            ".validate": "newData.hasChildren(['action','actorUid','ts'])",
+            "action":     { ".validate": "newData.isString() && (newData.val() === 'leave-family' || newData.val() === 'rotate-code' || newData.val() === 'delete-recipe')" },
+            "actorUid":   { ".validate": "newData.isString() && newData.val().length <= 128" },
+            "actorName":  { ".validate": "newData.isString() && newData.val().length <= 80" },
+            "ts":         { ".validate": "newData.isNumber() && newData.val() === now" },
+            "targetId":   { ".validate": "newData.isString() && newData.val().length <= 128" },
+            "targetName": { ".validate": "newData.isString() && newData.val().length <= 200" },
+            "meta":       { ".validate": "newData.isString() && newData.val().length <= 500" },
+            "$other":     { ".validate": false }
+          }
         }
       }
     },
