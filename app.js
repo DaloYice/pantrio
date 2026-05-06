@@ -24,6 +24,8 @@ initializeAppCheck(app, {
 const auth = getAuth(app);
 const db = getDatabase(app);
 
+const APP_VERSION = '0.9.15';
+
 // Register the service worker for PWA install + offline shell.
 // Registered after Firebase init so the page is interactive first.
 if ('serviceWorker' in navigator) {
@@ -710,6 +712,7 @@ onAuthStateChanged(auth, async user=>{
       document.getElementById('verify-banner').classList.add('hidden');
     }
     listenUserAuditLog();
+    listenAdminStatus();
     const snap=await get(ref(db,`users/${user.uid}/familyId`));
     if(snap.exists()){ familyId=snap.val(); loadApp(); }
     else{ document.getElementById('family-screen').classList.remove('hidden'); }
@@ -849,6 +852,206 @@ function listenAuditLog(){
   }, err => {
     console.warn('[audit] read failed:', err?.message || err);
   });
+}
+
+// ─── ADMIN ───
+let isAdmin = false;
+let adminFeedbackFilter = 'all';
+let cachedFeedback = [];
+
+function listenAdminStatus(){
+  if(!currentUser || isDemoMode){
+    isAdmin = false;
+    syncAdminUi();
+    return;
+  }
+  onValue(ref(db, `admins/${currentUser.uid}`), snap => {
+    isAdmin = snap.val() === true;
+    syncAdminUi();
+    if(isAdmin) listenAdminFeedback();
+  }, err => {
+    console.warn('[admin] read failed:', err?.message || err);
+    isAdmin = false;
+    syncAdminUi();
+  });
+}
+
+function syncAdminUi(){
+  const link = document.getElementById('admin-link-btn');
+  if(link) link.classList.toggle('hidden', !isAdmin);
+  const ver = document.getElementById('admin-version');
+  if(ver) ver.textContent = APP_VERSION;
+}
+
+window.switchAdminTab = (tab) => {
+  ['feedback','stats'].forEach(t => {
+    const btn = document.getElementById(`admin-tab-${t}`);
+    const content = document.getElementById(`admin-tab-content-${t}`);
+    if(!btn || !content) return;
+    const active = t === tab;
+    btn.classList.toggle('active', active);
+    btn.style.color = active ? 'var(--text)' : 'var(--text2)';
+    btn.style.borderBottomColor = active ? 'var(--green)' : 'transparent';
+    content.classList.toggle('hidden', !active);
+  });
+};
+
+window.setFeedbackFilter = (filter) => {
+  adminFeedbackFilter = filter;
+  ['all','bug','wish','other'].forEach(f => {
+    const btn = document.getElementById(`adm-fb-${f}`);
+    if(!btn) return;
+    const active = f === filter;
+    btn.classList.toggle('active', active);
+    btn.style.background = active ? 'var(--green)' : 'var(--surface)';
+    btn.style.color = active ? 'white' : 'var(--text)';
+  });
+  renderAdminFeedback();
+};
+
+function listenAdminFeedback(){
+  if(!isAdmin) return;
+  const q = query(ref(db, 'feedback'), orderByChild('ts'), limitToLast(200));
+  onValue(q, snap => {
+    cachedFeedback = [];
+    if(snap.exists()){
+      snap.forEach(child => { cachedFeedback.push({ id: child.key, ...child.val() }); });
+      cachedFeedback.reverse();
+    }
+    renderAdminFeedback();
+  }, err => {
+    console.warn('[admin-feedback] read failed:', err?.message || err);
+  });
+}
+
+const FB_TYPE_LABELS = {
+  'bug':   { icon: '🐞', label: 'Bug' },
+  'wish':  { icon: '✨', label: 'Wunsch' },
+  'other': { icon: '💬', label: 'Sonstiges' }
+};
+const FB_STATUS_LABELS = {
+  'new':  { color: 'var(--red)',    label: 'Neu' },
+  'read': { color: 'var(--orange)', label: 'Gelesen' },
+  'done': { color: 'var(--green)',  label: 'Erledigt' }
+};
+
+function renderAdminFeedback(){
+  const list = document.getElementById('admin-feedback-list');
+  if(!list) return;
+  const filtered = adminFeedbackFilter === 'all' ? cachedFeedback : cachedFeedback.filter(f => f.type === adminFeedbackFilter);
+  if(filtered.length === 0){
+    list.innerHTML = '<div style="font-size:13px;color:var(--text2);font-style:italic;padding:14px">Kein Feedback in dieser Kategorie.</div>';
+    return;
+  }
+  list.innerHTML = filtered.map(f => {
+    const type = FB_TYPE_LABELS[f.type] || { icon: '•', label: f.type };
+    const status = FB_STATUS_LABELS[f.status] || FB_STATUS_LABELS.new;
+    const when = formatRelativeTime(f.ts);
+    const meta = [];
+    if(f.userEmail) meta.push(esc(f.userEmail));
+    if(f.version) meta.push('v' + esc(f.version));
+    if(f.page) meta.push(esc(f.page));
+    return `<div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px">
+      <div style="display:flex;justify-content:space-between;gap:8px;align-items:flex-start;margin-bottom:6px">
+        <div style="font-size:13px;font-weight:700">${type.icon} ${esc(type.label)}</div>
+        <div style="font-size:11px;font-weight:700;color:${status.color}">${esc(status.label)}</div>
+      </div>
+      <div style="font-size:14px;line-height:1.5;white-space:pre-wrap;word-break:break-word;margin-bottom:8px">${esc(f.message || '')}</div>
+      <div style="font-size:11px;color:var(--text2);margin-bottom:10px">${meta.join(' · ')}${meta.length ? ' · ' : ''}${esc(when)}</div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
+        ${f.status !== 'read' ? `<button class="btn btn-outline btn-sm" data-action="setFeedbackStatus" data-id="${esc(f.id)}" data-status="read">Als gelesen markieren</button>` : ''}
+        ${f.status !== 'done' ? `<button class="btn btn-outline btn-sm" data-action="setFeedbackStatus" data-id="${esc(f.id)}" data-status="done" style="border-color:var(--green);color:var(--green)">Als erledigt</button>` : ''}
+        ${f.status !== 'new' ? `<button class="btn btn-outline btn-sm" data-action="setFeedbackStatus" data-id="${esc(f.id)}" data-status="new">Auf neu zurück</button>` : ''}
+        <button class="btn btn-outline btn-sm" data-action="adminDeleteFeedback" data-arg="${esc(f.id)}" style="border-color:var(--red);color:var(--red)">🗑</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+window.setFeedbackStatus = (_arg, el) => {
+  const id = el.getAttribute('data-id');
+  const status = el.getAttribute('data-status');
+  if(!id || !status) return;
+  update(ref(db, `feedback/${id}`), { status }).catch(e => alert('Status-Update fehlgeschlagen: ' + (e?.message||e)));
+};
+
+window.adminDeleteFeedback = async (id) => {
+  if(!confirm('Feedback wirklich löschen?')) return;
+  try {
+    await remove(ref(db, `feedback/${id}`));
+  } catch(e){
+    alert('Löschen fehlgeschlagen: ' + (e?.message||e));
+  }
+};
+
+// ─── FEEDBACK (User-Submission) ───
+window.openFeedbackModal = () => {
+  if(isDemoMode){ alert('Im Demo-Modus kannst du leider noch kein Feedback geben. Erstelle einen Account, um uns zu schreiben.'); return; }
+  document.getElementById('feedback-message').value = '';
+  document.getElementById('feedback-type').value = 'bug';
+  const cc = document.getElementById('feedback-charcount');
+  if(cc) cc.textContent = '0';
+  const status = document.getElementById('feedback-status');
+  if(status){ status.classList.add('hidden'); status.textContent = ''; }
+  const btn = document.getElementById('feedback-submit-btn');
+  if(btn){ btn.disabled = false; btn.textContent = 'Senden'; }
+  document.getElementById('feedback-modal').classList.remove('hidden');
+};
+
+document.addEventListener('input', (e) => {
+  if(e.target && e.target.id === 'feedback-message'){
+    const cc = document.getElementById('feedback-charcount');
+    if(cc) cc.textContent = String(e.target.value.length);
+  }
+});
+
+window.submitFeedback = async () => {
+  if(!currentUser || isDemoMode) return;
+  const type = document.getElementById('feedback-type').value;
+  const message = (document.getElementById('feedback-message').value || '').trim();
+  const statusEl = document.getElementById('feedback-status');
+  const btn = document.getElementById('feedback-submit-btn');
+  if(message.length < 1){
+    statusEl.classList.remove('hidden');
+    statusEl.style.background = 'var(--red-light)';
+    statusEl.style.color = 'var(--red)';
+    statusEl.textContent = 'Bitte schreib uns wenigstens einen Satz.';
+    return;
+  }
+  if(!['bug','wish','other'].includes(type)) return;
+  if(btn){ btn.disabled = true; btn.textContent = 'Sende…'; }
+  try {
+    const entry = {
+      type,
+      message: message.slice(0, 2000),
+      userUid: currentUser.uid,
+      userEmail: (currentUser.email || '').slice(0, 200),
+      ts: serverTimestamp(),
+      status: 'new',
+      version: APP_VERSION,
+      page: getCurrentPageId(),
+      ua: (navigator.userAgent || '').slice(0, 300)
+    };
+    await push(ref(db, 'feedback'), entry);
+    statusEl.classList.remove('hidden');
+    statusEl.style.background = 'var(--green-light)';
+    statusEl.style.color = 'var(--green)';
+    statusEl.textContent = '✓ Feedback gesendet. Vielen Dank!';
+    setTimeout(() => {
+      window.closeModal('feedback-modal');
+    }, 1200);
+  } catch(e){
+    statusEl.classList.remove('hidden');
+    statusEl.style.background = 'var(--red-light)';
+    statusEl.style.color = 'var(--red)';
+    statusEl.textContent = 'Senden fehlgeschlagen: ' + (e?.message || e);
+    if(btn){ btn.disabled = false; btn.textContent = 'Senden'; }
+  }
+};
+
+function getCurrentPageId(){
+  const visible = document.querySelector('.page.active');
+  return visible ? (visible.id || '') : '';
 }
 
 function listenUserAuditLog(){
@@ -2301,7 +2504,7 @@ window.closeModal=(id)=>document.getElementById(id).classList.add('hidden');
 // Skips lockout/demo-expired which are intentionally modal-by-design.
 document.addEventListener('keydown', (e) => {
   if (e.key !== 'Escape') return;
-  const dismissable = ['day-recipe-modal','recipe-shop-modal','invite-modal','family-switcher-modal'];
+  const dismissable = ['day-recipe-modal','recipe-shop-modal','invite-modal','family-switcher-modal','feedback-modal'];
   for (const id of dismissable) {
     const el = document.getElementById(id);
     if (el && !el.classList.contains('hidden')) { el.classList.add('hidden'); break; }
