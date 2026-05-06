@@ -3,7 +3,44 @@
     "users": {
       "$uid": {
         ".read": "$uid === auth.uid",
-        ".write": "$uid === auth.uid"
+        "name": {
+          ".write": "$uid === auth.uid",
+          ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 80"
+        },
+        "email": {
+          ".write": "$uid === auth.uid",
+          ".validate": "newData.isString() && newData.val().length <= 200"
+        },
+        "createdAt": {
+          ".write": "$uid === auth.uid",
+          ".validate": "newData.isNumber()"
+        },
+        "familyId": {
+          ".write": "$uid === auth.uid",
+          ".validate": "newData.isString() && newData.val().length <= 128"
+        },
+        "families": {
+          ".write": "$uid === auth.uid",
+          "$fid": {
+            "name": { ".validate": "newData.isString() && newData.val().length <= 80" },
+            "role": { ".validate": "newData.isString() && (newData.val() === 'admin' || newData.val() === 'member')" }
+          }
+        },
+        "familyAuditLog": {
+          ".indexOn": ["ts"],
+          "$entryId": {
+            ".write": "$uid === auth.uid && !data.exists() && newData.exists() && newData.child('actorUid').val() === auth.uid && newData.child('ts').val() === now",
+            ".validate": "newData.hasChildren(['action','actorUid','ts'])",
+            "action":     { ".validate": "newData.isString() && newData.val() === 'delete-family'" },
+            "actorUid":   { ".validate": "newData.isString() && newData.val().length <= 128" },
+            "actorName":  { ".validate": "newData.isString() && newData.val().length <= 80" },
+            "ts":         { ".validate": "newData.isNumber() && newData.val() === now" },
+            "targetId":   { ".validate": "newData.isString() && newData.val().length <= 128" },
+            "targetName": { ".validate": "newData.isString() && newData.val().length <= 200" },
+            "meta":       { ".validate": "newData.isString() && newData.val().length <= 500" },
+            "$other":     { ".validate": false }
+          }
+        }
       }
     },
     "families": {
