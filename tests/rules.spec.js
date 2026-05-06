@@ -1174,6 +1174,160 @@ describe('pantrio – RTDB Security Rules', () => {
       });
     });
 
+    describe('publicRecipes (Marktplatz)', () => {
+      beforeEach(async () => {
+        await seed(async (db) => {
+          await db.ref('families/-fam1').set({
+            name: 'Familie A',
+            code: 'ORIG',
+            members: {
+              alice: { role: 'admin' },
+              bob:   { role: 'member' },
+            },
+          });
+        });
+      });
+
+      it('erlaubt Family-Admin zu veröffentlichen', async () => {
+        await assertSucceeds(
+          authed('alice').ref('publicRecipes').push({
+            name: 'Pasta',
+            sourceFamilyId: '-fam1',
+            sourceRecipeId: '-rec1',
+            publishedAt: 1700000000000,
+            copies: 0,
+          })
+        );
+      });
+
+      it('blockt Family-Member (kein Admin) zu veröffentlichen', async () => {
+        await assertFails(
+          authed('bob').ref('publicRecipes').push({
+            name: 'Pasta',
+            sourceFamilyId: '-fam1',
+            sourceRecipeId: '-rec1',
+            publishedAt: 1700000000000,
+            copies: 0,
+          })
+        );
+      });
+
+      it('blockt Outsider zu veröffentlichen', async () => {
+        await assertFails(
+          authed('mallory').ref('publicRecipes').push({
+            name: 'Spam',
+            sourceFamilyId: '-fam1',
+            sourceRecipeId: '-rec1',
+            publishedAt: 1700000000000,
+            copies: 0,
+          })
+        );
+      });
+
+      it('erlaubt jedem Auth-User Lesen', async () => {
+        await seed(async (db) => {
+          await db.ref('publicRecipes/-pub1').set({
+            name: 'Pasta', sourceFamilyId: '-fam1', sourceRecipeId: '-rec1',
+            publishedAt: 1700000000000, copies: 0,
+          });
+        });
+        await assertSucceeds(authed('mallory').ref('publicRecipes').once('value'));
+      });
+
+      it('erlaubt copies-Inkrement durch jeden Auth-User', async () => {
+        await seed(async (db) => {
+          await db.ref('publicRecipes/-pub1').set({
+            name: 'Pasta', sourceFamilyId: '-fam1', sourceRecipeId: '-rec1',
+            publishedAt: 1700000000000, copies: 5,
+          });
+        });
+        await assertSucceeds(
+          authed('mallory').ref('publicRecipes/-pub1/copies').set(6)
+        );
+      });
+
+      it('blockt copies-Sprung (nicht +1)', async () => {
+        await seed(async (db) => {
+          await db.ref('publicRecipes/-pub1').set({
+            name: 'Pasta', sourceFamilyId: '-fam1', sourceRecipeId: '-rec1',
+            publishedAt: 1700000000000, copies: 5,
+          });
+        });
+        await assertFails(
+          authed('mallory').ref('publicRecipes/-pub1/copies').set(50)
+        );
+      });
+
+      it('blockt Update auf Inhalts-Felder (nur copies erlaubt)', async () => {
+        await seed(async (db) => {
+          await db.ref('publicRecipes/-pub1').set({
+            name: 'Pasta', sourceFamilyId: '-fam1', sourceRecipeId: '-rec1',
+            publishedAt: 1700000000000, copies: 0,
+          });
+        });
+        await assertFails(
+          authed('alice').ref('publicRecipes/-pub1/name').set('Hijacked')
+        );
+      });
+
+      it('erlaubt Family-Admin zu unpublishen', async () => {
+        await seed(async (db) => {
+          await db.ref('publicRecipes/-pub1').set({
+            name: 'Pasta', sourceFamilyId: '-fam1', sourceRecipeId: '-rec1',
+            publishedAt: 1700000000000, copies: 0,
+          });
+        });
+        await assertSucceeds(
+          authed('alice').ref('publicRecipes/-pub1').remove()
+        );
+      });
+
+      it('blockt Family-Member zu unpublishen', async () => {
+        await seed(async (db) => {
+          await db.ref('publicRecipes/-pub1').set({
+            name: 'Pasta', sourceFamilyId: '-fam1', sourceRecipeId: '-rec1',
+            publishedAt: 1700000000000, copies: 0,
+          });
+        });
+        await assertFails(
+          authed('bob').ref('publicRecipes/-pub1').remove()
+        );
+      });
+
+      it('erlaubt globalem App-Admin zu moderieren (delete)', async () => {
+        await seed(async (db) => {
+          await db.ref('publicRecipes/-pub1').set({
+            name: 'Spam', sourceFamilyId: '-fam1', sourceRecipeId: '-rec1',
+            publishedAt: 1700000000000, copies: 0,
+          });
+        });
+        await assertSucceeds(
+          authed(ADMIN_UID).ref('publicRecipes/-pub1').remove()
+        );
+      });
+
+      it('blockt zu langen Namen (>100)', async () => {
+        await assertFails(
+          authed('alice').ref('publicRecipes').push({
+            name: 'x'.repeat(101),
+            sourceFamilyId: '-fam1', sourceRecipeId: '-rec1',
+            publishedAt: 1700000000000, copies: 0,
+          })
+        );
+      });
+
+      it('blockt unbekanntes Top-Level-Feld ($other)', async () => {
+        await assertFails(
+          authed('alice').ref('publicRecipes').push({
+            name: 'Pasta',
+            sourceFamilyId: '-fam1', sourceRecipeId: '-rec1',
+            publishedAt: 1700000000000, copies: 0,
+            evilField: 'inject',
+          })
+        );
+      });
+    });
+
     describe('stats', () => {
       it('erlaubt jedem eingeloggten User, Counter zu inkrementieren', async () => {
         await assertSucceeds(authed('alice').ref('stats/userCount').set(1));
