@@ -798,6 +798,27 @@ function listenAuditLog(){
   });
 }
 
+async function logUserAudit(action, extra){
+  if(!currentUser || isDemoMode) return;
+  try {
+    const entry = {
+      action,
+      actorUid: currentUser.uid,
+      ts: serverTimestamp()
+    };
+    const name = currentUser.displayName;
+    if (name) entry.actorName = name.slice(0, 80);
+    if (extra && typeof extra === 'object'){
+      if (extra.targetId) entry.targetId = String(extra.targetId).slice(0, 128);
+      if (extra.targetName) entry.targetName = String(extra.targetName).slice(0, 200);
+      if (extra.meta) entry.meta = String(extra.meta).slice(0, 500);
+    }
+    await push(ref(db, `users/${currentUser.uid}/familyAuditLog`), entry);
+  } catch(e){
+    console.warn('[user-audit] write failed:', e?.message || e);
+  }
+}
+
 async function logAudit(fid, action, extra){
   if(!fid || !currentUser || isDemoMode) return;
   try {
@@ -898,8 +919,10 @@ window.deleteFamily = async() => {
   }
   const oldCode = familyData.code;
   const fid = familyId;
+  const famName = familyData.name || '';
   try{
-    // Order matters: code first (rule needs family with admin), then family, then own user-cache.
+    // Order matters: audit log first (must outlive the family), then code, family, own user-cache.
+    await logUserAudit('delete-family', { targetId: fid, targetName: famName });
     if(oldCode){
       try{ await remove(ref(db,`familyCodes/${oldCode}`)); } catch(_){ /* code may not exist */ }
     }
