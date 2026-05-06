@@ -757,4 +757,147 @@ describe('pantrio – RTDB Security Rules', () => {
       );
     });
   });
+
+  describe('User-Audit-Log (cross-family)', () => {
+    const TS = { '.sv': 'timestamp' };
+
+    it('erlaubt User, eigenen delete-family-Eintrag anzulegen', async () => {
+      await assertSucceeds(
+        authed('alice').ref('users/alice/familyAuditLog').push({
+          action: 'delete-family',
+          actorUid: 'alice',
+          targetId: '-fam1',
+          targetName: 'Familie A',
+          ts: TS,
+        })
+      );
+    });
+
+    it('blockt Eintrag in fremdem User-Pfad', async () => {
+      await assertFails(
+        authed('alice').ref('users/bob/familyAuditLog').push({
+          action: 'delete-family',
+          actorUid: 'alice',
+          ts: TS,
+        })
+      );
+    });
+
+    it('blockt Lesen fremder User-Logs', async () => {
+      await seed(async (db) => {
+        await db.ref('users/bob/familyAuditLog/-e1').set({
+          action: 'delete-family',
+          actorUid: 'bob',
+          ts: 1700000000000,
+        });
+      });
+      await assertFails(
+        authed('alice').ref('users/bob/familyAuditLog').once('value')
+      );
+    });
+
+    it('blockt Update auf bestehenden eigenen Eintrag (append-only)', async () => {
+      await seed(async (db) => {
+        await db.ref('users/alice/familyAuditLog/-e1').set({
+          action: 'delete-family',
+          actorUid: 'alice',
+          ts: 1700000000000,
+        });
+      });
+      await assertFails(
+        authed('alice').ref('users/alice/familyAuditLog/-e1').update({ meta: 'tampered' })
+      );
+    });
+
+    it('blockt Delete auf bestehenden eigenen Eintrag', async () => {
+      await seed(async (db) => {
+        await db.ref('users/alice/familyAuditLog/-e1').set({
+          action: 'delete-family',
+          actorUid: 'alice',
+          ts: 1700000000000,
+        });
+      });
+      await assertFails(
+        authed('alice').ref('users/alice/familyAuditLog/-e1').remove()
+      );
+    });
+
+    it('blockt unbekannte action im User-Log', async () => {
+      await assertFails(
+        authed('alice').ref('users/alice/familyAuditLog').push({
+          action: 'rotate-code', // gehört in family-scoped Log, nicht hier
+          actorUid: 'alice',
+          ts: TS,
+        })
+      );
+    });
+
+    it('blockt Spoofing der actorUid im User-Log', async () => {
+      await assertFails(
+        authed('alice').ref('users/alice/familyAuditLog').push({
+          action: 'delete-family',
+          actorUid: 'bob',
+          ts: TS,
+        })
+      );
+    });
+
+    it('blockt Client-Timestamp im User-Log', async () => {
+      await assertFails(
+        authed('alice').ref('users/alice/familyAuditLog').push({
+          action: 'delete-family',
+          actorUid: 'alice',
+          ts: Date.now(),
+        })
+      );
+    });
+  });
+
+  describe('User-Pfad-Refactor (granulare Rules)', () => {
+    it('erlaubt User, eigenes name-Feld zu setzen', async () => {
+      await assertSucceeds(
+        authed('alice').ref('users/alice/name').set('Alice Müller')
+      );
+    });
+
+    it('erlaubt initiales Multi-Set bei Registrierung', async () => {
+      await assertSucceeds(
+        authed('alice').ref('users/alice').set({
+          name: 'Alice',
+          email: 'alice@example.com',
+          createdAt: 1700000000000,
+        })
+      );
+    });
+
+    it('blockt Schreiben in fremden User-Pfad', async () => {
+      await assertFails(
+        authed('alice').ref('users/bob/name').set('Hijack')
+      );
+    });
+
+    it('blockt überlangen User-Namen', async () => {
+      await assertFails(
+        authed('alice').ref('users/alice/name').set('x'.repeat(81))
+      );
+    });
+
+    it('erlaubt families-Map-Update', async () => {
+      await assertSucceeds(
+        authed('alice').ref('users/alice/families/-fam1').set({
+          name: 'Familie A',
+          role: 'admin',
+        })
+      );
+    });
+
+    it('blockt invalide role im families-Map', async () => {
+      await assertFails(
+        authed('alice').ref('users/alice/families/-fam1').set({
+          name: 'Familie A',
+          role: 'superuser',
+        })
+      );
+    });
+  });
 });
