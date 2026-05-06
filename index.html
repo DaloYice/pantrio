@@ -544,12 +544,54 @@
       <div id="user-audit-log-list" style="display:flex;flex-direction:column;gap:8px"></div>
     </div>
 
+    <!-- Hilfe & Feedback -->
+    <div id="help-feedback-block" style="margin-top:24px;padding-top:20px;border-top:1px solid var(--border)">
+      <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text2);margin-bottom:8px">Hilfe & Feedback</div>
+      <button class="btn btn-outline" style="width:100%;margin-bottom:8px" data-action="openFeedbackModal">💬 Feedback geben</button>
+      <button id="admin-link-btn" class="btn btn-outline hidden" style="width:100%" data-action="showPage" data-arg="admin-page">🛠 Admin-Bereich</button>
+    </div>
+
     <!-- Danger Zone -->
     <div id="danger-zone" style="margin-top:32px;padding-top:20px;border-top:1px solid var(--border)">
       <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--red);margin-bottom:8px">Gefahrenzone</div>
       <button id="leave-family-btn" type="button" class="btn btn-ghost hidden" style="width:100%;color:var(--red);border:1px solid var(--red-light)" data-action="leaveFamily">🚪 Diese Familie verlassen</button>
       <button id="delete-family-btn" type="button" class="btn btn-ghost hidden" style="width:100%;color:var(--red);border:1px solid var(--red-light)" data-action="deleteFamily">🗑 Diese Familie löschen</button>
       <p id="danger-zone-hint" style="margin-top:8px;font-size:12px;color:var(--text2);line-height:1.4"></p>
+    </div>
+  </div>
+
+  <!-- ADMIN PAGE -->
+  <div id="admin-page" class="page">
+    <div style="margin-bottom:20px">
+      <button class="btn btn-ghost" data-action="showPage" data-arg="family-page" style="padding-left:0">← Zurück</button>
+      <h1 style="font-family:'Fraunces',serif;font-size:28px;margin-top:8px">🛠 Admin-Bereich</h1>
+      <p style="font-size:13px;color:var(--text2);margin-top:4px">Pantrio v<span id="admin-version">–</span></p>
+    </div>
+
+    <!-- Tabs -->
+    <div style="display:flex;gap:6px;border-bottom:1px solid var(--border);margin-bottom:18px;overflow-x:auto;-webkit-overflow-scrolling:touch">
+      <button class="admin-tab active" id="admin-tab-feedback" data-action="switchAdminTab" data-arg="feedback" style="padding:10px 14px;border:none;background:none;font-size:14px;font-weight:600;color:var(--text);border-bottom:2px solid var(--green);cursor:pointer">💬 Feedback</button>
+      <button class="admin-tab" id="admin-tab-stats" data-action="switchAdminTab" data-arg="stats" style="padding:10px 14px;border:none;background:none;font-size:14px;font-weight:600;color:var(--text2);border-bottom:2px solid transparent;cursor:pointer">📊 Stats</button>
+    </div>
+
+    <!-- Feedback-Tab -->
+    <div id="admin-tab-content-feedback" class="admin-tab-content">
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px">
+        <button class="filter-chip active" id="adm-fb-all" data-action="setFeedbackFilter" data-arg="all" style="padding:6px 12px;border:1px solid var(--border);border-radius:16px;background:var(--green);color:white;font-size:13px;cursor:pointer">Alle</button>
+        <button class="filter-chip" id="adm-fb-bug" data-action="setFeedbackFilter" data-arg="bug" style="padding:6px 12px;border:1px solid var(--border);border-radius:16px;background:var(--surface);color:var(--text);font-size:13px;cursor:pointer">🐞 Bug</button>
+        <button class="filter-chip" id="adm-fb-wish" data-action="setFeedbackFilter" data-arg="wish" style="padding:6px 12px;border:1px solid var(--border);border-radius:16px;background:var(--surface);color:var(--text);font-size:13px;cursor:pointer">✨ Wunsch</button>
+        <button class="filter-chip" id="adm-fb-other" data-action="setFeedbackFilter" data-arg="other" style="padding:6px 12px;border:1px solid var(--border);border-radius:16px;background:var(--surface);color:var(--text);font-size:13px;cursor:pointer">💬 Sonstiges</button>
+      </div>
+      <div id="admin-feedback-list" style="display:flex;flex-direction:column;gap:10px">
+        <div style="font-size:13px;color:var(--text2);font-style:italic">Lädt…</div>
+      </div>
+    </div>
+
+    <!-- Stats-Tab -->
+    <div id="admin-tab-content-stats" class="admin-tab-content hidden">
+      <div id="admin-stats-list" style="display:flex;flex-direction:column;gap:10px">
+        <div style="font-size:13px;color:var(--text2);font-style:italic">Stats kommen in v0.9.16.</div>
+      </div>
     </div>
   </div>
 
@@ -696,6 +738,32 @@
     <div class="modal-actions">
       <button class="btn btn-secondary" data-action="closeModal" data-arg="day-recipe-modal">Abbrechen</button>
       <button class="btn btn-red btn-sm" data-action="removeMealFromDay" id="remove-meal-btn" style="display:none">Entfernen</button>
+    </div>
+  </div>
+</div>
+
+<!-- FEEDBACK MODAL -->
+<div id="feedback-modal" class="modal-overlay hidden" data-modal-overlay="feedback-modal">
+  <div class="modal" role="dialog" aria-modal="true" tabindex="-1">
+    <h3>💬 Feedback geben</h3>
+    <p style="font-size:13px;color:var(--text2);line-height:1.4">Bug entdeckt? Wunsch oder Idee? Schreib uns – wir lesen jedes Feedback.</p>
+    <div class="form-group">
+      <label>Art</label>
+      <select id="feedback-type" style="width:100%;padding:11px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--text);font-size:14px;font-family:inherit">
+        <option value="bug">🐞 Bug / Fehler</option>
+        <option value="wish">✨ Wunsch / Idee</option>
+        <option value="other">💬 Sonstiges</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Nachricht</label>
+      <textarea id="feedback-message" rows="6" maxlength="2000" placeholder="Was möchtest du uns mitteilen?" style="width:100%;padding:11px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--text);font-size:14px;font-family:inherit;resize:vertical"></textarea>
+      <div style="font-size:11px;color:var(--text2);margin-top:4px;text-align:right"><span id="feedback-charcount">0</span>/2000</div>
+    </div>
+    <div id="feedback-status" class="hidden" style="font-size:13px;padding:8px 10px;border-radius:6px;margin-bottom:10px"></div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" data-action="closeModal" data-arg="feedback-modal">Abbrechen</button>
+      <button class="btn btn-primary" id="feedback-submit-btn" data-action="submitFeedback" style="flex:1">Senden</button>
     </div>
   </div>
 </div>
