@@ -1140,5 +1140,63 @@ describe('pantrio – RTDB Security Rules', () => {
         );
       });
     });
+
+    describe('systemBanner', () => {
+      it('erlaubt Lesen für jeden eingeloggten User', async () => {
+        await seed(async (db) => {
+          await db.ref('systemBanner').set({ text: 'Wartung', severity: 'info', active: true, updatedAt: 1700000000000 });
+        });
+        await assertSucceeds(authed('alice').ref('systemBanner').once('value'));
+      });
+
+      it('blockt Schreiben für Nicht-Admin', async () => {
+        await assertFails(
+          authed('alice').ref('systemBanner').set({ text: 'Hack', severity: 'info', active: true, updatedAt: 1700000000000 })
+        );
+      });
+
+      it('erlaubt Schreiben für Admin', async () => {
+        await assertSucceeds(
+          authed(ADMIN_UID).ref('systemBanner').set({ text: 'Wartung Sonntag', severity: 'warning', active: true, updatedAt: 1700000000000 })
+        );
+      });
+
+      it('blockt zu langen Banner-Text (>280)', async () => {
+        await assertFails(
+          authed(ADMIN_UID).ref('systemBanner').set({ text: 'x'.repeat(281), severity: 'info', active: true, updatedAt: 1700000000000 })
+        );
+      });
+
+      it('blockt invalide severity', async () => {
+        await assertFails(
+          authed(ADMIN_UID).ref('systemBanner').set({ text: 'x', severity: 'critical', active: true, updatedAt: 1700000000000 })
+        );
+      });
+    });
+
+    describe('stats', () => {
+      it('erlaubt jedem eingeloggten User, Counter zu inkrementieren', async () => {
+        await assertSucceeds(authed('alice').ref('stats/userCount').set(1));
+        await assertSucceeds(authed('alice').ref('stats/familyCount').set(5));
+      });
+
+      it('blockt negative Werte', async () => {
+        await assertFails(authed('alice').ref('stats/userCount').set(-1));
+      });
+
+      it('blockt Lesen für Nicht-Admin', async () => {
+        await seed(async (db) => {
+          await db.ref('stats').set({ userCount: 10, familyCount: 3 });
+        });
+        await assertFails(authed('alice').ref('stats').once('value'));
+      });
+
+      it('erlaubt Lesen für Admin', async () => {
+        await seed(async (db) => {
+          await db.ref('stats').set({ userCount: 10, familyCount: 3 });
+        });
+        await assertSucceeds(authed(ADMIN_UID).ref('stats').once('value'));
+      });
+    });
   });
 });
