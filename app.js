@@ -24,7 +24,7 @@ initializeAppCheck(app, {
 const auth = getAuth(app);
 const db = getDatabase(app);
 
-const APP_VERSION = '0.9.16';
+const APP_VERSION = '0.9.17';
 
 // Register the service worker for PWA install + offline shell.
 // Registered after Firebase init so the page is interactive first.
@@ -917,10 +917,19 @@ let isAdmin = false;
 let adminFeedbackFilter = 'all';
 let cachedFeedback = [];
 
+const BOOTSTRAP_ADMIN_UID = 'ZntXAQlTABT5zKTsMHs9nwHVdpl1';
+
 function listenAdminStatus(){
   if(!currentUser || isDemoMode){
     isAdmin = false;
     syncAdminUi();
+    return;
+  }
+  // Bootstrap-Admin: identische UID-Whitelist wie in den Rules.
+  if(currentUser.uid === BOOTSTRAP_ADMIN_UID){
+    isAdmin = true;
+    syncAdminUi();
+    listenAdminFeedback();
     return;
   }
   onValue(ref(db, `admins/${currentUser.uid}`), snap => {
