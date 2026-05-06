@@ -1,11 +1,12 @@
 // Pantrio – Service Worker
 // Strategie:
-//   - Same-origin App-Shell (HTML/CSS/JS, Manifest, Icon): stale-while-revalidate.
-//     Liefert sofort aus Cache (offline-fähig), aktualisiert im Hintergrund.
+//   - Same-origin App-Shell (HTML/CSS/JS, Manifest, Icon): network-first.
+//     Holt immer die aktuelle Version vom Netz; Cache nur als Offline-Fallback.
+//     Vermeidet Versions-Mismatch zwischen index.html und app.js/css beim Deploy.
 //   - Cross-origin (Firebase, Google Fonts, reCAPTCHA): NICHT abgefangen,
 //     gehen direkt zum Netzwerk – keine Token-Caching-Probleme.
 
-const CACHE = 'pantrio-shell-v6';
+const CACHE = 'pantrio-shell-v7';
 const SHELL = [
   '/',
   '/index.html',
@@ -38,17 +39,19 @@ self.addEventListener('fetch', (event) => {
   if (url.origin !== self.location.origin) return; // let Firebase / Fonts hit the network directly
 
   event.respondWith(
-    caches.open(CACHE).then(async (cache) => {
-      const cached = await cache.match(req);
-      const network = fetch(req)
-        .then((resp) => {
-          if (resp && resp.ok && resp.type === 'basic') {
-            cache.put(req, resp.clone());
-          }
-          return resp;
-        })
-        .catch(() => cached);
-      return cached || network;
-    })
+    (async () => {
+      try {
+        const network = await fetch(req);
+        if (network && network.ok && network.type === 'basic') {
+          const cache = await caches.open(CACHE);
+          cache.put(req, network.clone());
+        }
+        return network;
+      } catch (e) {
+        const cached = await caches.match(req);
+        if (cached) return cached;
+        throw e;
+      }
+    })()
   );
 });
