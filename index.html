@@ -14,17 +14,7 @@
 <link rel="icon" type="image/svg+xml" href="/icon.svg">
 <link rel="apple-touch-icon" href="/icon.svg">
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,400;0,700;0,900;1,400&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet">
-<script>
-  // Theme bootstrap (must run before app.css applies, prevents FOUC)
-  (function(){
-    try {
-      var saved = localStorage.getItem('pantrio.theme');
-      if (saved === 'light' || saved === 'dark') {
-        document.documentElement.setAttribute('data-theme', saved);
-      }
-    } catch (e) {}
-  })();
-</script>
+<script src="theme-init.js"></script>
 <link rel="stylesheet" href="app.css">
 </head>
 <body>
@@ -49,8 +39,8 @@
     <div id="auth-error" class="error-msg hidden"></div>
 
     <div class="auth-tabs">
-      <button class="auth-tab active" onclick="switchAuthTab('login')">Anmelden</button>
-      <button class="auth-tab" onclick="switchAuthTab('register')">Registrieren</button>
+      <button class="auth-tab active" data-action="switchAuthTab" data-arg="login">Anmelden</button>
+      <button class="auth-tab" data-action="switchAuthTab" data-arg="register">Registrieren</button>
     </div>
 
     <div id="login-form">
@@ -62,14 +52,14 @@
         <label>Passwort</label>
         <input type="password" id="login-password" placeholder="••••••••" autocomplete="current-password" required>
       </div>
-      <button class="btn btn-primary" onclick="login()">Anmelden</button>
-      <button class="btn btn-ghost" style="width:100%;margin-top:8px;font-size:13px" onclick="switchAuthTab('forgot')">Passwort vergessen?</button>
+      <button class="btn btn-primary" data-action="login">Anmelden</button>
+      <button class="btn btn-ghost" style="width:100%;margin-top:8px;font-size:13px" data-action="switchAuthTab" data-arg="forgot">Passwort vergessen?</button>
       <div style="display:flex;align-items:center;gap:12px;margin:18px 0 4px">
         <div style="flex:1;height:1px;background:var(--border)"></div>
         <span style="font-size:12px;color:var(--text2);font-weight:600">ODER</span>
         <div style="flex:1;height:1px;background:var(--border)"></div>
       </div>
-      <button class="btn" id="demo-btn" onclick="startDemo()" style="width:100%;background:linear-gradient(135deg,#fff8e1,#fef3c7);border:2px solid #F59E0B;color:#92400e;font-size:15px;padding:13px">
+      <button class="btn" id="demo-btn" data-action="startDemo" style="width:100%;background:linear-gradient(135deg,#fff8e1,#fef3c7);border:2px solid #F59E0B;color:#92400e;font-size:15px;padding:13px">
         🧪 Demo ausprobieren – ohne Registrierung
       </button>
       <p id="demo-hint" style="text-align:center;font-size:12px;color:var(--text2);margin-top:10px">Beispieldaten, nichts wird gespeichert · 10 Minuten</p>
@@ -86,13 +76,13 @@
       </div>
       <div class="form-group">
         <label>Passwort</label>
-        <input type="password" id="reg-password" placeholder="min. 8 Zeichen" autocomplete="new-password" required minlength="8" oninput="checkPasswordStrength(this.value)">
+        <input type="password" id="reg-password" placeholder="min. 8 Zeichen" autocomplete="new-password" required minlength="8" data-input-action="checkPasswordStrength">
         <div id="pw-strength-bar" style="height:4px;border-radius:4px;margin-top:6px;background:var(--border);overflow:hidden">
           <div id="pw-strength-fill" style="height:100%;width:0%;border-radius:4px;transition:all 0.3s"></div>
         </div>
         <div id="pw-strength-label" style="font-size:11px;margin-top:4px;color:var(--text2)"></div>
       </div>
-      <button class="btn btn-primary" onclick="register()">Konto erstellen</button>
+      <button class="btn btn-primary" data-action="register">Konto erstellen</button>
     </div>
 
     <div id="forgot-form" class="hidden">
@@ -103,8 +93,8 @@
       </div>
       <div id="forgot-success" class="success-msg hidden">E-Mail gesendet! Bitte prüfe deinen Posteingang.</div>
       <div style="display:flex;gap:10px">
-        <button class="btn btn-secondary" onclick="switchAuthTab('login')">Zurück</button>
-        <button class="btn btn-primary" onclick="resetPassword()" style="flex:1">Link senden</button>
+        <button class="btn btn-secondary" data-action="switchAuthTab" data-arg="login">Zurück</button>
+        <button class="btn btn-primary" data-action="resetPassword" style="flex:1">Link senden</button>
       </div>
     </div>
   </div>
@@ -120,11 +110,11 @@
     </div>
     <div id="family-error" class="error-msg hidden"></div>
     <div id="family-choice">
-      <button class="choice-btn" onclick="showCreateFamily()">
+      <button class="choice-btn" data-action="showCreateFamily">
         <span class="choice-title">✨ Familie erstellen</span>
         <span class="choice-desc">Neue Familiengruppe anlegen und per Code einladen</span>
       </button>
-      <button class="choice-btn" onclick="showJoinFamily()">
+      <button class="choice-btn" data-action="showJoinFamily">
         <span class="choice-title">🔗 Familie beitreten</span>
         <span class="choice-desc">Mit einem 6-stelligen Einladungscode beitreten</span>
       </button>
@@ -135,8 +125,8 @@
         <input type="text" id="family-name" placeholder="z.B. Familie Müller">
       </div>
       <div style="display:flex;gap:10px">
-        <button class="btn btn-secondary" onclick="showFamilyChoice()">Zurück</button>
-        <button class="btn btn-primary" onclick="createFamily()" style="flex:1">Erstellen</button>
+        <button class="btn btn-secondary" data-action="showFamilyChoice">Zurück</button>
+        <button class="btn btn-primary" data-action="createFamily" style="flex:1">Erstellen</button>
       </div>
     </div>
     <div id="join-family-form" class="hidden">
@@ -145,12 +135,12 @@
         <input type="text" id="join-code" placeholder="z.B. AB7Z2KMP9XYZ" maxlength="24" style="text-transform:uppercase;letter-spacing:2px;font-size:18px;text-align:center">
       </div>
       <div style="display:flex;gap:10px">
-        <button class="btn btn-secondary" onclick="showFamilyChoice()">Zurück</button>
-        <button class="btn btn-primary" onclick="joinFamily()" style="flex:1">Beitreten</button>
+        <button class="btn btn-secondary" data-action="showFamilyChoice">Zurück</button>
+        <button class="btn btn-primary" data-action="joinFamily" style="flex:1">Beitreten</button>
       </div>
     </div>
     <div style="margin-top:14px">
-      <button class="btn btn-ghost" style="width:100%" onclick="logout()">Anderes Konto</button>
+      <button class="btn btn-ghost" style="width:100%" data-action="logout">Anderes Konto</button>
     </div>
   </div>
 </div>
@@ -171,11 +161,11 @@
         letter-spacing: 1px;
         border: 2px solid #F59E0B;
       ">⏱ <span id="demo-timer">10:00</span></div>
-      <button type="button" class="pantry-badge btn-reset" onclick="showPage('pantry-page')" id="pantry-count-badge" aria-label="Zum Vorrat wechseln">0 Vorräte</button>
-      <button type="button" class="theme-toggle-btn btn-reset" id="theme-toggle-btn" onclick="toggleTheme()" aria-label="Farbschema umschalten" title="Farbschema umschalten">
+      <button type="button" class="pantry-badge btn-reset" data-action="showPage" data-arg="pantry-page" id="pantry-count-badge" aria-label="Zum Vorrat wechseln">0 Vorräte</button>
+      <button type="button" class="theme-toggle-btn btn-reset" id="theme-toggle-btn" data-action="toggleTheme" aria-label="Farbschema umschalten" title="Farbschema umschalten">
         <span id="theme-toggle-icon" aria-hidden="true">🌙</span>
       </button>
-      <button class="family-switcher-btn" onclick="openFamilySwitcher()" id="family-switcher-btn">
+      <button class="family-switcher-btn" data-action="openFamilySwitcher" id="family-switcher-btn">
         <span id="topbar-family-name">Familie</span>
         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5"/></svg>
       </button>
@@ -184,12 +174,12 @@
   <div id="verify-banner" class="hidden" style="background:#fff3cd;border-bottom:1px solid #ffc107;padding:10px 16px;display:flex;align-items:center;gap:10px;font-size:13px;color:#856404">
     <span>📧</span>
     <span style="flex:1">Bitte bestätige deine E-Mail-Adresse.</span>
-    <button onclick="resendVerification()" style="background:#ffc107;border:none;border-radius:6px;padding:5px 10px;font-size:12px;font-weight:700;cursor:pointer;font-family:'Instrument Sans',sans-serif">Erneut senden</button>
+    <button data-action="resendVerification" style="background:#ffc107;border:none;border-radius:6px;padding:5px 10px;font-size:12px;font-weight:700;cursor:pointer;font-family:'Instrument Sans',sans-serif">Erneut senden</button>
   </div>
   <div id="demo-banner" class="demo-banner hidden" style="margin:12px 16px 0;border-radius:12px">
     <span class="demo-icon">🧪</span>
     <span style="flex:1">Demo-Modus – keine Daten werden gespeichert</span>
-    <button class="demo-exit-btn" onclick="exitDemo()">✕ Beenden</button>
+    <button class="demo-exit-btn" data-action="exitDemo">✕ Beenden</button>
   </div>
 
   <!-- HOME -->
@@ -198,22 +188,22 @@
       <h2 id="home-greeting-text">Guten Morgen! <br><em>Was kochst du heute?</em></h2>
     </div>
     <div class="home-cards">
-      <button type="button" class="home-card green btn-reset" onclick="showPage('pantry-page')" aria-label="Zum Vorrat wechseln">
+      <button type="button" class="home-card green btn-reset" data-action="showPage" data-arg="pantry-page" aria-label="Zum Vorrat wechseln">
         <div class="card-icon" aria-hidden="true">🥕</div>
         <div class="card-num" id="hc-pantry">0</div>
         <div class="card-label">Vorräte</div>
       </button>
-      <button type="button" class="home-card orange btn-reset" onclick="showPage('recipes-page')" aria-label="Zu den Rezepten wechseln">
+      <button type="button" class="home-card orange btn-reset" data-action="showPage" data-arg="recipes-page" aria-label="Zu den Rezepten wechseln">
         <div class="card-icon" aria-hidden="true">📖</div>
         <div class="card-num" id="hc-recipes">0</div>
         <div class="card-label">Rezepte</div>
       </button>
-      <button type="button" class="home-card red btn-reset" onclick="showPage('shopping-page')" aria-label="Zur Einkaufsliste wechseln">
+      <button type="button" class="home-card red btn-reset" data-action="showPage" data-arg="shopping-page" aria-label="Zur Einkaufsliste wechseln">
         <div class="card-icon" aria-hidden="true">🛒</div>
         <div class="card-num" id="hc-shopping">0</div>
         <div class="card-label">Einkauf</div>
       </button>
-      <button type="button" class="home-card blue btn-reset" onclick="showPage('week-page')" aria-label="Zum Wochenplan wechseln">
+      <button type="button" class="home-card blue btn-reset" data-action="showPage" data-arg="week-page" aria-label="Zum Wochenplan wechseln">
         <div class="card-icon" aria-hidden="true">📅</div>
         <div class="card-num" id="hc-week">0</div>
         <div class="card-label">Wochenplan</div>
@@ -222,7 +212,7 @@
 
     <div class="section-title">
       Heute möglich
-      <button class="btn btn-ghost btn-sm" onclick="showPage('recipes-page')">Alle →</button>
+      <button class="btn btn-ghost btn-sm" data-action="showPage" data-arg="recipes-page">Alle →</button>
     </div>
     <div class="quick-recipes" id="home-quick-recipes">
       <div class="empty-state">
@@ -237,14 +227,14 @@
   <div id="pantry-page" class="page">
     <div class="section-title">
       Mein Vorrat
-      <button class="btn btn-primary btn-sm" onclick="toggleAddPantryForm()">+ Hinzufügen</button>
+      <button class="btn btn-primary btn-sm" data-action="toggleAddPantryForm">+ Hinzufügen</button>
     </div>
 
     <!-- Tabs -->
     <div style="display:flex;background:var(--surface2);border-radius:12px;padding:4px;margin-bottom:16px;gap:4px">
-      <button class="pantry-tab active" id="ptab-stock" onclick="switchPantryTab('stock')">🥕 Vorrat</button>
-      <button class="pantry-tab" id="ptab-staples" onclick="switchPantryTab('staples')">⭐ Stammliste</button>
-      <button class="pantry-tab" id="ptab-cook" onclick="switchPantryTab('cook')">👨‍🍳 Kochen</button>
+      <button class="pantry-tab active" id="ptab-stock" data-action="switchPantryTab" data-arg="stock">🥕 Vorrat</button>
+      <button class="pantry-tab" id="ptab-staples" data-action="switchPantryTab" data-arg="staples">⭐ Stammliste</button>
+      <button class="pantry-tab" id="ptab-cook" data-action="switchPantryTab" data-arg="cook">👨‍🍳 Kochen</button>
     </div>
 
     <!-- ADD FORM -->
@@ -253,7 +243,7 @@
       <div class="form-group" style="margin-bottom:12px">
         <label>Aus Rezepten suchen</label>
         <div style="position:relative">
-          <input type="text" id="p-search" placeholder="z.B. Nudeln, Tomaten…" oninput="searchPantryIngredients(this.value)" autocomplete="off" style="padding-right:36px">
+          <input type="text" id="p-search" placeholder="z.B. Nudeln, Tomaten…" data-input-action="searchPantryIngredients" autocomplete="off" style="padding-right:36px">
           <svg style="position:absolute;right:12px;top:50%;transform:translateY(-50%);color:var(--text2);width:16px;height:16px;pointer-events:none" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z"/></svg>
         </div>
         <div id="p-search-results" class="hidden" style="background:var(--surface);border:2px solid var(--green);border-radius:10px;margin-top:4px;max-height:200px;overflow-y:auto;box-shadow:var(--shadow)"></div>
@@ -265,7 +255,7 @@
       </div>
       <div class="add-form-grid2">
         <div class="form-group" style="margin:0"><label>Emoji</label><input type="text" id="p-emoji" placeholder="🥕" maxlength="4"></div>
-        <div class="form-group" style="margin:0"><label>Name *</label><input type="text" id="p-name" placeholder="z.B. Nudeln" onkeydown="if(event.key==='Enter')savePantryItem()"></div>
+        <div class="form-group" style="margin:0"><label>Name *</label><input type="text" id="p-name" placeholder="z.B. Nudeln" data-enter-action="savePantryItem"></div>
       </div>
       <div class="add-form-grid">
         <div class="form-group" style="margin:0"><label>Kategorie</label>
@@ -291,8 +281,8 @@
         </select>
       </div>
       <div style="display:flex;gap:10px">
-        <button class="btn btn-secondary" onclick="toggleAddPantryForm()">Abbrechen</button>
-        <button class="btn btn-primary" onclick="savePantryItem()" style="flex:1">Speichern</button>
+        <button class="btn btn-secondary" data-action="toggleAddPantryForm">Abbrechen</button>
+        <button class="btn btn-primary" data-action="savePantryItem" style="flex:1">Speichern</button>
       </div>
     </div>
 
@@ -300,7 +290,7 @@
     <div id="pantry-tab-stock">
       <div class="pantry-search">
         <svg class="search-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z"/></svg>
-        <input type="text" placeholder="Vorrat durchsuchen…" oninput="filterPantry(this.value)">
+        <input type="text" placeholder="Vorrat durchsuchen…" data-input-action="filterPantry">
       </div>
       <div class="pantry-categories" id="pantry-cat-filters"></div>
       <div id="pantry-list"><div class="loading"><div class="spinner"></div>Lade Vorräte…</div></div>
@@ -318,7 +308,7 @@
         <div style="font-weight:700;color:#92400e;margin-bottom:12px">Artikel zur Stammliste</div>
         <div class="add-form-grid2" style="margin-bottom:10px">
           <div class="form-group" style="margin:0"><label>Emoji</label><input type="text" id="st-emoji" placeholder="🧴" maxlength="4"></div>
-          <div class="form-group" style="margin:0"><label>Name *</label><input type="text" id="st-name" placeholder="z.B. Olivenöl" onkeydown="if(event.key==='Enter')saveStaple()"></div>
+          <div class="form-group" style="margin:0"><label>Name *</label><input type="text" id="st-name" placeholder="z.B. Olivenöl" data-enter-action="saveStaple"></div>
         </div>
         <div class="add-form-grid" style="margin-bottom:10px">
           <div class="form-group" style="margin:0"><label>Kategorie</label>
@@ -337,14 +327,14 @@
           <div class="form-group" style="margin:0"><label>Einheit</label><input type="text" id="st-unit" placeholder="g"></div>
         </div>
         <div style="display:flex;gap:10px">
-          <button class="btn btn-secondary" onclick="toggleStapleForm()">Abbrechen</button>
-          <button class="btn" onclick="saveStaple()" style="flex:1;background:var(--orange);color:white">Speichern</button>
+          <button class="btn btn-secondary" data-action="toggleStapleForm">Abbrechen</button>
+          <button class="btn" data-action="saveStaple" style="flex:1;background:var(--orange);color:white">Speichern</button>
         </div>
       </div>
 
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
         <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text2)" id="staples-count-label">0 Artikel</div>
-        <button class="btn btn-secondary btn-sm" onclick="toggleStapleForm()">+ Hinzufügen</button>
+        <button class="btn btn-secondary btn-sm" data-action="toggleStapleForm">+ Hinzufügen</button>
       </div>
 
       <div id="staples-list"></div>
@@ -358,8 +348,8 @@
       </div>
       <div id="cook-list"></div>
       <div id="cook-actions" class="hidden" style="margin-top:16px;display:flex;gap:10px">
-        <button class="btn btn-secondary" onclick="clearCookChecked(false)">Abbrechen</button>
-        <button class="btn btn-red" onclick="clearCookChecked(true)" style="flex:1">🗑 Abgehakte entfernen</button>
+        <button class="btn btn-secondary" data-action="clearCookChecked" data-arg="false">Abbrechen</button>
+        <button class="btn btn-red" data-action="clearCookChecked" data-arg="true" style="flex:1">🗑 Abgehakte entfernen</button>
       </div>
     </div>
   </div>
@@ -371,19 +361,19 @@
     </div>
     <div class="pantry-search">
       <svg class="search-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z"/></svg>
-      <input type="text" placeholder="Rezept suchen…" oninput="filterRecipes(this.value)">
+      <input type="text" placeholder="Rezept suchen…" data-input-action="filterRecipes">
     </div>
     <div class="recipe-filters" id="recipe-filter-chips"></div>
     <div class="recipe-cards" id="recipe-cards-list">
       <div class="loading"><div class="spinner"></div>Lade Rezepte…</div>
     </div>
-    <button class="fab" onclick="showAddRecipePage()">+</button>
+    <button class="fab" data-action="showAddRecipePage">+</button>
   </div>
 
   <!-- DETAIL -->
   <div id="detail-page" class="page">
     <div class="detail-back">
-      <button class="btn btn-ghost" onclick="showPage('recipes-page')" style="padding-left:0">← Zurück</button>
+      <button class="btn btn-ghost" data-action="showPage" data-arg="recipes-page" style="padding-left:0">← Zurück</button>
     </div>
     <div id="detail-content"></div>
   </div>
@@ -424,18 +414,18 @@
         <span></span>
       </div>
       <div id="r-ingredients"></div>
-      <button class="add-row-btn" onclick="addIngRow()">+ Zutat hinzufügen</button>
+      <button class="add-row-btn" data-action="addIngRow">+ Zutat hinzufügen</button>
     </div>
 
     <div class="form-section">
       <div class="form-section-title">👨‍🍳 Zubereitung</div>
       <div id="r-steps"></div>
-      <button class="add-row-btn" onclick="addStepRow()">+ Schritt hinzufügen</button>
+      <button class="add-row-btn" data-action="addStepRow">+ Schritt hinzufügen</button>
     </div>
 
     <div style="display:flex;gap:10px;margin-bottom:24px;">
-      <button class="btn btn-secondary" onclick="cancelRecipeForm()">Abbrechen</button>
-      <button class="btn btn-primary" onclick="saveRecipe()" style="flex:1">Rezept speichern</button>
+      <button class="btn btn-secondary" data-action="cancelRecipeForm">Abbrechen</button>
+      <button class="btn btn-primary" data-action="saveRecipe" style="flex:1">Rezept speichern</button>
     </div>
     <div id="r-error" class="error-msg hidden"></div>
   </div>
@@ -451,14 +441,14 @@
     </div>
 
     <div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap">
-      <button class="btn btn-outline btn-sm" onclick="openAddRecipeToShop()">📖 Aus Rezept</button>
-      <button class="btn btn-outline btn-sm" onclick="clearCheckedItems()">✓ Erledigte löschen</button>
-      <button class="btn btn-red btn-sm" onclick="clearAllShopping()">🗑 Leeren</button>
+      <button class="btn btn-outline btn-sm" data-action="openAddRecipeToShop">📖 Aus Rezept</button>
+      <button class="btn btn-outline btn-sm" data-action="clearCheckedItems">✓ Erledigte löschen</button>
+      <button class="btn btn-red btn-sm" data-action="clearAllShopping">🗑 Leeren</button>
     </div>
 
     <div class="shopping-add-row">
-      <input type="text" id="shop-manual-input" placeholder="Zutat manuell hinzufügen…" onkeydown="if(event.key==='Enter')addManualShopItem()">
-      <button class="btn btn-primary btn-sm" onclick="addManualShopItem()" style="width:auto;padding:11px 16px">+</button>
+      <input type="text" id="shop-manual-input" placeholder="Zutat manuell hinzufügen…" data-enter-action="addManualShopItem">
+      <button class="btn btn-primary btn-sm" data-action="addManualShopItem" style="width:auto;padding:11px 16px">+</button>
     </div>
 
     <div id="shopping-list-content"></div>
@@ -468,7 +458,7 @@
   <div id="week-page" class="page">
     <div class="section-title">
       Wochenplan
-      <button class="btn btn-primary btn-sm" onclick="generateShoppingFromWeek()">🛒 Einkaufsliste</button>
+      <button class="btn btn-primary btn-sm" data-action="generateShoppingFromWeek">🛒 Einkaufsliste</button>
     </div>
     <div class="week-grid" id="week-grid"></div>
   </div>
@@ -484,7 +474,7 @@
         <div style="font-weight:700;font-size:16px" id="fam-username">–</div>
         <div style="font-size:13px;color:var(--text2)" id="fam-useremail">–</div>
       </div>
-      <button class="btn btn-red btn-sm" onclick="logout()">Abmelden</button>
+      <button class="btn btn-red btn-sm" data-action="logout">Abmelden</button>
     </div>
 
     <!-- Active family -->
@@ -503,9 +493,9 @@
           <div style="font-family:monospace;font-size:26px;font-weight:900;letter-spacing:6px;color:var(--text)" id="fam-code-disp">••••••</div>
         </div>
         <div style="display:flex;flex-direction:column;gap:6px">
-          <button class="btn btn-primary btn-sm" onclick="showInviteModal()">👁 Anzeigen</button>
-          <button class="btn btn-secondary btn-sm" onclick="shareInviteCode()">📤 Teilen</button>
-          <button class="btn btn-outline btn-sm" id="rotate-code-btn" onclick="rotateInviteCode()" style="display:none">🔄 Erneuern</button>
+          <button class="btn btn-primary btn-sm" data-action="showInviteModal">👁 Anzeigen</button>
+          <button class="btn btn-secondary btn-sm" data-action="shareInviteCode">📤 Teilen</button>
+          <button class="btn btn-outline btn-sm" id="rotate-code-btn" data-action="rotateInviteCode" style="display:none">🔄 Erneuern</button>
         </div>
       </div>
     </div>
@@ -520,23 +510,23 @@
     <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text2);margin-bottom:8px">Meine Familien</div>
     <div id="all-families-list" style="display:flex;flex-direction:column;gap:8px;margin-bottom:12px"></div>
     <div style="display:flex;gap:10px">
-      <button class="btn btn-outline" style="flex:1" onclick="openFamilySwitcher()">＋ Familie hinzufügen</button>
+      <button class="btn btn-outline" style="flex:1" data-action="openFamilySwitcher">＋ Familie hinzufügen</button>
     </div>
 
     <!-- Darstellung -->
     <div style="margin-top:32px;padding-top:20px;border-top:1px solid var(--border)">
       <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text2);margin-bottom:8px">Darstellung</div>
       <div id="theme-segment" role="radiogroup" aria-label="Farbschema" style="display:flex;gap:8px">
-        <button type="button" class="btn btn-outline" style="flex:1" data-theme-choice="light" onclick="setTheme('light')" role="radio" aria-checked="false">☀️ Hell</button>
-        <button type="button" class="btn btn-outline" style="flex:1" data-theme-choice="dark"  onclick="setTheme('dark')"  role="radio" aria-checked="false">🌙 Dunkel</button>
-        <button type="button" class="btn btn-outline" style="flex:1" data-theme-choice="system" onclick="setTheme('system')" role="radio" aria-checked="false">🖥 System</button>
+        <button type="button" class="btn btn-outline" style="flex:1" data-theme-choice="light" data-action="setTheme" data-arg="light" role="radio" aria-checked="false">☀️ Hell</button>
+        <button type="button" class="btn btn-outline" style="flex:1" data-theme-choice="dark"  data-action="setTheme" data-arg="dark"  role="radio" aria-checked="false">🌙 Dunkel</button>
+        <button type="button" class="btn btn-outline" style="flex:1" data-theme-choice="system" data-action="setTheme" data-arg="system" role="radio" aria-checked="false">🖥 System</button>
       </div>
     </div>
 
     <!-- Data Export -->
     <div style="margin-top:32px;padding-top:20px;border-top:1px solid var(--border)">
       <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text2);margin-bottom:8px">Daten</div>
-      <button type="button" class="btn btn-ghost" style="width:100%" onclick="exportFamilyData()">📥 Daten exportieren (JSON)</button>
+      <button type="button" class="btn btn-ghost" style="width:100%" data-action="exportFamilyData">📥 Daten exportieren (JSON)</button>
       <p style="margin-top:8px;font-size:12px;color:var(--text2);line-height:1.4">Lädt eine Sicherungskopie deiner Familiendaten herunter (Vorrat, Rezepte, Wochenplan, Einkaufsliste).</p>
     </div>
 
@@ -557,36 +547,36 @@
     <!-- Danger Zone -->
     <div id="danger-zone" style="margin-top:32px;padding-top:20px;border-top:1px solid var(--border)">
       <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--red);margin-bottom:8px">Gefahrenzone</div>
-      <button id="leave-family-btn" type="button" class="btn btn-ghost hidden" style="width:100%;color:var(--red);border:1px solid var(--red-light)" onclick="leaveFamily()">🚪 Diese Familie verlassen</button>
-      <button id="delete-family-btn" type="button" class="btn btn-ghost hidden" style="width:100%;color:var(--red);border:1px solid var(--red-light)" onclick="deleteFamily()">🗑 Diese Familie löschen</button>
+      <button id="leave-family-btn" type="button" class="btn btn-ghost hidden" style="width:100%;color:var(--red);border:1px solid var(--red-light)" data-action="leaveFamily">🚪 Diese Familie verlassen</button>
+      <button id="delete-family-btn" type="button" class="btn btn-ghost hidden" style="width:100%;color:var(--red);border:1px solid var(--red-light)" data-action="deleteFamily">🗑 Diese Familie löschen</button>
       <p id="danger-zone-hint" style="margin-top:8px;font-size:12px;color:var(--text2);line-height:1.4"></p>
     </div>
   </div>
 
   <!-- BOTTOM NAV -->
   <nav class="bottom-nav">
-    <button class="nav-item active" id="nav-home" onclick="showPage('home-page')">
+    <button class="nav-item active" id="nav-home" data-action="showPage" data-arg="home-page">
       <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m2.25 12 8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25"/></svg>
       Home
     </button>
-    <button class="nav-item" id="nav-pantry" onclick="showPage('pantry-page')">
+    <button class="nav-item" id="nav-pantry" data-action="showPage" data-arg="pantry-page">
       <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 0 1-2.247 2.118H6.622a2.25 2.25 0 0 1-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z"/></svg>
       Vorrat
     </button>
-    <button class="nav-item" id="nav-recipes" onclick="showPage('recipes-page')">
+    <button class="nav-item" id="nav-recipes" data-action="showPage" data-arg="recipes-page">
       <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 0 0 6 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 0 1 6 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 0 1 6-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0 0 18 18a8.966 8.966 0 0 0-6 2.292m0-14.25v14.25"/></svg>
       Rezepte
     </button>
-    <button class="nav-item" id="nav-shopping" onclick="showPage('shopping-page')">
+    <button class="nav-item" id="nav-shopping" data-action="showPage" data-arg="shopping-page">
       <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 0 0-3 3h15.75m-12.75-3h11.218c1.121-2.3 2.1-4.684 2.924-7.138a60.114 60.114 0 0 0-16.536-1.84M7.5 14.25L5.106 5.272M6 20.25a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Zm12.75 0a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Z"/></svg>
       <span id="nav-shopping-badge" class="nav-badge hidden"></span>
       Einkauf
     </button>
-    <button class="nav-item" id="nav-week" onclick="showPage('week-page')">
+    <button class="nav-item" id="nav-week" data-action="showPage" data-arg="week-page">
       <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5"/></svg>
       Woche
     </button>
-    <button class="nav-item" id="nav-family" onclick="showPage('family-page')">
+    <button class="nav-item" id="nav-family" data-action="showPage" data-arg="family-page">
       <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M18 18.72a9.094 9.094 0 0 0 3.741-.479 3 3 0 0 0-4.682-2.72m.94 3.198.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0 1 12 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 0 1 6 18.719m12 0a5.971 5.971 0 0 0-.941-3.197m0 0A5.995 5.995 0 0 0 12 12.75a5.995 5.995 0 0 0-5.058 2.772m0 0a3 3 0 0 0-4.681 2.72 8.986 8.986 0 0 0 3.74.477m.94-3.197a5.971 5.971 0 0 0-.94 3.197M15 6.75a3 3 0 1 1-6 0 3 3 0 0 1 6 0Zm6 3a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Zm-13.5 0a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Z"/></svg>
       Familie
     </button>
@@ -614,22 +604,22 @@
     <p style="font-size:13px;color:var(--text2);margin-bottom:0">Das Fenster schließt sich automatisch.</p>
   </div>
 </div>
-<div id="invite-modal" class="modal-overlay hidden" onclick="closeModal('invite-modal')">
-  <div class="modal" role="dialog" aria-modal="true" tabindex="-1" onclick="event.stopPropagation()">
+<div id="invite-modal" class="modal-overlay hidden" data-modal-overlay="invite-modal">
+  <div class="modal" role="dialog" aria-modal="true" tabindex="-1">
     <div class="modal-handle"></div>
     <h3>Einladungscode</h3>
     <p>Teile diesen Code – damit können Familienmitglieder beitreten.</p>
     <div class="code-box"><div class="code" id="modal-code">––––––</div></div>
     <div class="modal-actions">
-      <button class="btn btn-secondary" onclick="closeModal('invite-modal')">Schließen</button>
-      <button class="btn btn-primary" onclick="copyInviteCode()">📋 Kopieren</button>
+      <button class="btn btn-secondary" data-action="closeModal" data-arg="invite-modal">Schließen</button>
+      <button class="btn btn-primary" data-action="copyInviteCode">📋 Kopieren</button>
     </div>
   </div>
 </div>
 
 <!-- MODAL: Family Switcher -->
-<div id="family-switcher-modal" class="modal-overlay hidden" onclick="closeModal('family-switcher-modal')">
-  <div class="modal" role="dialog" aria-modal="true" tabindex="-1" onclick="event.stopPropagation()">
+<div id="family-switcher-modal" class="modal-overlay hidden" data-modal-overlay="family-switcher-modal">
+  <div class="modal" role="dialog" aria-modal="true" tabindex="-1">
     <div class="modal-handle"></div>
     <h3>Familie wechseln</h3>
     <p>Wähle eine Familie oder füge eine neue hinzu.</p>
@@ -638,8 +628,8 @@
 
     <div id="switcher-add-section">
       <div style="display:flex;gap:8px;margin-bottom:12px">
-        <button class="btn btn-outline" style="flex:1" onclick="showSwitcherCreate()">✨ Neue Familie</button>
-        <button class="btn btn-outline" style="flex:1" onclick="showSwitcherJoin()">🔗 Beitreten</button>
+        <button class="btn btn-outline" style="flex:1" data-action="showSwitcherCreate">✨ Neue Familie</button>
+        <button class="btn btn-outline" style="flex:1" data-action="showSwitcherJoin">🔗 Beitreten</button>
       </div>
     </div>
 
@@ -647,8 +637,8 @@
       <div style="font-weight:700;margin-bottom:10px">Neue Familie erstellen</div>
       <div class="form-group"><label>Familienname</label><input type="text" id="sw-family-name" placeholder="z.B. Schwiegereltern Müller"></div>
       <div style="display:flex;gap:8px">
-        <button class="btn btn-secondary" onclick="hideSwitcherForms()">Zurück</button>
-        <button class="btn btn-primary" onclick="createFamilyFromSwitcher()" style="flex:1">Erstellen</button>
+        <button class="btn btn-secondary" data-action="hideSwitcherForms">Zurück</button>
+        <button class="btn btn-primary" data-action="createFamilyFromSwitcher" style="flex:1">Erstellen</button>
       </div>
     </div>
 
@@ -656,15 +646,15 @@
       <div style="font-weight:700;margin-bottom:10px">Familie beitreten</div>
       <div class="form-group"><label>Einladungscode</label><input type="text" id="sw-join-code" placeholder="z.B. AB7Z2KMP9XYZ" maxlength="24" style="text-transform:uppercase;letter-spacing:2px;font-size:16px;text-align:center"></div>
       <div style="display:flex;gap:8px">
-        <button class="btn btn-secondary" onclick="hideSwitcherForms()">Zurück</button>
-        <button class="btn btn-primary" onclick="joinFamilyFromSwitcher()" style="flex:1">Beitreten</button>
+        <button class="btn btn-secondary" data-action="hideSwitcherForms">Zurück</button>
+        <button class="btn btn-primary" data-action="joinFamilyFromSwitcher" style="flex:1">Beitreten</button>
       </div>
     </div>
 
     <div id="switcher-error" class="error-msg hidden"></div>
     <div class="modal-actions" style="margin-top:8px">
-      <button class="btn btn-secondary" onclick="closeModal('family-switcher-modal')">Schließen</button>
-      <button class="btn btn-red" onclick="logout()">Abmelden</button>
+      <button class="btn btn-secondary" data-action="closeModal" data-arg="family-switcher-modal">Schließen</button>
+      <button class="btn btn-red" data-action="logout">Abmelden</button>
     </div>
   </div>
 </div>
@@ -675,14 +665,14 @@
     <div style="font-size:52px;margin-bottom:12px" aria-hidden="true">⏰</div>
     <h3 id="demo-expired-title" style="margin-bottom:8px">Demo-Zeit abgelaufen</h3>
     <p style="margin-bottom:24px">Du hast die 10 Minuten Demo genutzt. Erstelle jetzt ein kostenloses Konto um Pantrio dauerhaft zu verwenden – alle Funktionen bleiben erhalten!</p>
-    <button class="btn btn-primary" onclick="goToRegisterFromDemo()" style="margin-bottom:10px">✨ Jetzt kostenlos registrieren</button>
-    <button class="btn btn-ghost" style="width:100%;font-size:13px" onclick="goToLoginFromDemo()">Ich habe bereits ein Konto</button>
+    <button class="btn btn-primary" data-action="goToRegisterFromDemo" style="margin-bottom:10px">✨ Jetzt kostenlos registrieren</button>
+    <button class="btn btn-ghost" style="width:100%;font-size:13px" data-action="goToLoginFromDemo">Ich habe bereits ein Konto</button>
   </div>
 </div>
 
 <!-- MODAL: Add recipe to shopping -->
-<div id="recipe-shop-modal" class="modal-overlay hidden" onclick="closeModal('recipe-shop-modal')">
-  <div class="modal" role="dialog" aria-modal="true" tabindex="-1" onclick="event.stopPropagation()">
+<div id="recipe-shop-modal" class="modal-overlay hidden" data-modal-overlay="recipe-shop-modal">
+  <div class="modal" role="dialog" aria-modal="true" tabindex="-1">
     <div class="modal-handle"></div>
     <h3>Rezept zur Einkaufsliste</h3>
     <p>Wähle ein Rezept – fehlende Zutaten werden automatisch hinzugefügt.</p>
@@ -691,21 +681,21 @@
     </div>
     <div class="recipe-select-list" id="recipe-select-list"></div>
     <div class="modal-actions">
-      <button class="btn btn-secondary" onclick="closeModal('recipe-shop-modal')">Abbrechen</button>
+      <button class="btn btn-secondary" data-action="closeModal" data-arg="recipe-shop-modal">Abbrechen</button>
     </div>
   </div>
 </div>
 
 <!-- MODAL: Add recipe to day -->
-<div id="day-recipe-modal" class="modal-overlay hidden" onclick="closeModal('day-recipe-modal')">
-  <div class="modal" role="dialog" aria-modal="true" tabindex="-1" onclick="event.stopPropagation()">
+<div id="day-recipe-modal" class="modal-overlay hidden" data-modal-overlay="day-recipe-modal">
+  <div class="modal" role="dialog" aria-modal="true" tabindex="-1">
     <div class="modal-handle"></div>
     <h3 id="day-modal-title">Rezept wählen</h3>
     <p>Wähle ein Rezept für diesen Tag und diese Mahlzeit.</p>
     <div class="recipe-select-list" id="day-recipe-list"></div>
     <div class="modal-actions">
-      <button class="btn btn-secondary" onclick="closeModal('day-recipe-modal')">Abbrechen</button>
-      <button class="btn btn-red btn-sm" onclick="removeMealFromDay()" id="remove-meal-btn" style="display:none">Entfernen</button>
+      <button class="btn btn-secondary" data-action="closeModal" data-arg="day-recipe-modal">Abbrechen</button>
+      <button class="btn btn-red btn-sm" data-action="removeMealFromDay" id="remove-meal-btn" style="display:none">Entfernen</button>
     </div>
   </div>
 </div>
