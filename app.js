@@ -657,6 +657,7 @@ onAuthStateChanged(auth, async user=>{
     } else {
       document.getElementById('verify-banner').classList.add('hidden');
     }
+    listenUserAuditLog();
     const snap=await get(ref(db,`users/${user.uid}/familyId`));
     if(snap.exists()){ familyId=snap.val(); loadApp(); }
     else{ document.getElementById('family-screen').classList.remove('hidden'); }
@@ -795,6 +796,38 @@ function listenAuditLog(){
     }).join('');
   }, err => {
     console.warn('[audit] read failed:', err?.message || err);
+  });
+}
+
+function listenUserAuditLog(){
+  if(!currentUser || isDemoMode) return;
+  const q = query(ref(db, `users/${currentUser.uid}/familyAuditLog`), orderByChild('ts'), limitToLast(50));
+  onValue(q, snap => {
+    const block = document.getElementById('user-audit-log-block');
+    const list = document.getElementById('user-audit-log-list');
+    if(!block || !list) return;
+    if(!snap.exists()){
+      block.classList.add('hidden');
+      list.innerHTML = '';
+      return;
+    }
+    const entries = [];
+    snap.forEach(child => { entries.push(child.val()); });
+    entries.reverse();
+    block.classList.remove('hidden');
+    list.innerHTML = entries.map(e => {
+      const target = e.targetName ? esc(e.targetName) : 'Unbenannte Familie';
+      const when = formatRelativeTime(e.ts);
+      return `<div style="display:flex;gap:10px;align-items:flex-start;padding:8px 10px;background:var(--surface2);border-radius:8px;font-size:13px">
+        <span style="font-size:16px;flex-shrink:0">🗑</span>
+        <div style="flex:1;min-width:0">
+          <div><strong>${target}</strong> gelöscht</div>
+          <div style="font-size:11px;color:var(--text2);margin-top:2px">${esc(when)}</div>
+        </div>
+      </div>`;
+    }).join('');
+  }, err => {
+    console.warn('[user-audit] read failed:', err?.message || err);
   });
 }
 
