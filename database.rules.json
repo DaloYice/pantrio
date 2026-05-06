@@ -179,8 +179,8 @@
         "difficulty":     { ".validate": "newData.isString() && newData.val().length <= 40" },
         "description":    { ".validate": "newData.isString() && newData.val().length <= 2000" },
         "portions":       { ".validate": "newData.isNumber() || newData.isString()" },
-        "ingredients":    { ".validate": "newData.hasChildren() || newData.val() === null" },
-        "steps":          { ".validate": "newData.hasChildren() || newData.val() === null" },
+        "ingredients":    { ".validate": "newData.hasChildren()" },
+        "steps":          { ".validate": "newData.hasChildren()" },
         "sourceFamilyId": { ".validate": "newData.isString() && newData.val().length <= 128" },
         "sourceRecipeId": { ".validate": "newData.isString() && newData.val().length <= 128" },
         "publishedAt":    { ".validate": "newData.isNumber()" },
@@ -191,7 +191,7 @@
           "$other":     { ".validate": false }
         },
         "copies": {
-          ".write": "auth != null && newData.isNumber() && newData.val() === (data.val() || 0) + 1",
+          ".write": "auth != null && newData.isNumber() && data.exists() && newData.val() === data.val() + 1",
           ".validate": "newData.isNumber() && newData.val() >= 0"
         },
         "$other": { ".validate": false }
