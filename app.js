@@ -1,7 +1,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { initializeAppCheck, ReCaptchaV3Provider } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app-check.js";
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, updateProfile, sendEmailVerification, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-import { getDatabase, ref, set, get, push, onValue, update, remove, serverTimestamp, query, limitToLast, orderByChild } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+import { getDatabase, ref, set, get, push, onValue, update, remove, serverTimestamp, query, limitToLast, orderByChild, runTransaction } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 
 const app = initializeApp({
   apiKey: "AIzaSyCwEc0C3hBaWeipnxIoGY_ugmtH1znuvZ4",
@@ -24,7 +24,7 @@ initializeAppCheck(app, {
 const auth = getAuth(app);
 const db = getDatabase(app);
 
-const APP_VERSION = '0.9.15';
+const APP_VERSION = '0.9.16';
 
 // Register the service worker for PWA install + offline shell.
 // Registered after Firebase init so the page is interactive first.
@@ -557,6 +557,7 @@ window.register = async()=>{
     const c=await createUserWithEmailAndPassword(auth,email,pw);
     await updateProfile(c.user,{displayName:name});
     await update(ref(db,`users/${c.user.uid}`),{name,email,createdAt:Date.now()});
+    bumpStat('userCount', +1);
     await sendEmailVerification(c.user);
   }catch(e){ authErr(friendlyErr(e.code)); }
 };
@@ -686,8 +687,14 @@ window.createFamily = async()=>{
   await set(ref(db,`familyCodes/${code}`),fr.key);
   await update(ref(db,`users/${currentUser.uid}/families`),{ [fr.key]:{ name, role:'admin' } });
   await seedStarterRecipes(fr.key);
+  bumpStat('familyCount', +1);
   familyId=fr.key; loadApp();
 };
+
+function bumpStat(key, delta){
+  // Best-effort counter; Tampering möglich, aber Schaden begrenzt auf Stats-Anzeige.
+  runTransaction(ref(db, `stats/${key}`), v => (typeof v === 'number' ? v : 0) + delta).catch(() => {});
+}
 
 window.joinFamily = async()=>{
   const code=document.getElementById('join-code').value.trim().toUpperCase();
@@ -713,6 +720,7 @@ onAuthStateChanged(auth, async user=>{
     }
     listenUserAuditLog();
     listenAdminStatus();
+    listenSystemBanner();
     const snap=await get(ref(db,`users/${user.uid}/familyId`));
     if(snap.exists()){ familyId=snap.val(); loadApp(); }
     else{ document.getElementById('family-screen').classList.remove('hidden'); }
@@ -854,6 +862,56 @@ function listenAuditLog(){
   });
 }
 
+// ─── SYSTEM BANNER ───
+const BANNER_DISMISS_KEY = 'pantrio.bannerDismissed';
+
+function listenSystemBanner(){
+  onValue(ref(db, 'systemBanner'), snap => {
+    const banner = snap.val();
+    renderSystemBanner(banner);
+  }, err => console.warn('[banner] read failed:', err?.message || err));
+}
+
+function renderSystemBanner(banner){
+  const el = document.getElementById('system-banner');
+  const txt = document.getElementById('system-banner-text');
+  const ico = document.getElementById('system-banner-icon');
+  if(!el || !txt) return;
+  if(!banner || !banner.active || !banner.text){
+    el.classList.add('hidden');
+    return;
+  }
+  // Already dismissed (lokal nach updatedAt-Hash)?
+  let dismissed = '';
+  try { dismissed = localStorage.getItem(BANNER_DISMISS_KEY) || ''; } catch(e){}
+  if(dismissed === String(banner.updatedAt || '')){
+    el.classList.add('hidden');
+    return;
+  }
+  txt.textContent = banner.text;
+  if(banner.severity === 'warning'){
+    el.style.background = '#fff3cd';
+    el.style.borderBottom = '1px solid #ffc107';
+    el.style.color = '#856404';
+    if(ico) ico.textContent = '⚠';
+  } else {
+    el.style.background = '#dbeafe';
+    el.style.borderBottom = '1px solid #3b82f6';
+    el.style.color = '#1e40af';
+    if(ico) ico.textContent = 'ℹ';
+  }
+  el.classList.remove('hidden');
+}
+
+window.dismissSystemBanner = async () => {
+  try {
+    const snap = await get(ref(db, 'systemBanner/updatedAt'));
+    const ts = snap.val() || '';
+    localStorage.setItem(BANNER_DISMISS_KEY, String(ts));
+  } catch(e){}
+  document.getElementById('system-banner').classList.add('hidden');
+};
+
 // ─── ADMIN ───
 let isAdmin = false;
 let adminFeedbackFilter = 'all';
@@ -884,7 +942,9 @@ function syncAdminUi(){
 }
 
 window.switchAdminTab = (tab) => {
-  ['feedback','stats'].forEach(t => {
+  if(tab === 'stats') loadAdminStats();
+  if(tab === 'system') loadAdminBanner();
+  ['feedback','stats','system'].forEach(t => {
     const btn = document.getElementById(`admin-tab-${t}`);
     const content = document.getElementById(`admin-tab-content-${t}`);
     if(!btn || !content) return;
@@ -973,6 +1033,88 @@ window.setFeedbackStatus = (_arg, el) => {
   const status = el.getAttribute('data-status');
   if(!id || !status) return;
   update(ref(db, `feedback/${id}`), { status }).catch(e => alert('Status-Update fehlgeschlagen: ' + (e?.message||e)));
+};
+
+async function loadAdminStats(){
+  if(!isAdmin) return;
+  const list = document.getElementById('admin-stats-list');
+  if(!list) return;
+  list.innerHTML = '<div style="font-size:13px;color:var(--text2);font-style:italic">Lädt…</div>';
+  try {
+    const [statsSnap, fbSnap] = await Promise.all([
+      get(ref(db, 'stats')),
+      get(query(ref(db, 'feedback'), orderByChild('ts'), limitToLast(500)))
+    ]);
+    const stats = statsSnap.val() || {};
+    let feedbackTotal = 0, feedbackNew = 0;
+    if(fbSnap.exists()){
+      fbSnap.forEach(c => {
+        feedbackTotal++;
+        if(c.val()?.status === 'new') feedbackNew++;
+      });
+    }
+    const card = (label, value, hint) => `<div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:14px">
+      <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text2);margin-bottom:6px">${esc(label)}</div>
+      <div style="font-size:28px;font-weight:900;font-family:'Fraunces',serif">${esc(String(value))}</div>
+      ${hint ? `<div style="font-size:11px;color:var(--text2);margin-top:4px">${esc(hint)}</div>` : ''}
+    </div>`;
+    list.innerHTML = [
+      card('Registrierte User', stats.userCount ?? '?', 'approx (Counter-Pfad)'),
+      card('Familien', stats.familyCount ?? '?', 'approx'),
+      card('Feedback gesamt', feedbackTotal, ''),
+      card('Davon neu', feedbackNew, '🔴 ungelesen'),
+      card('App-Version', APP_VERSION, ''),
+      card('SW-Cache', 'pantrio-shell-v7', '')
+    ].join('');
+  } catch(e){
+    list.innerHTML = `<div style="font-size:13px;color:var(--red);padding:14px">Stats-Read fehlgeschlagen: ${esc(e?.message||String(e))}</div>`;
+  }
+}
+
+async function loadAdminBanner(){
+  if(!isAdmin) return;
+  try {
+    const snap = await get(ref(db, 'systemBanner'));
+    const b = snap.val() || {};
+    const txt = document.getElementById('banner-text');
+    const sev = document.getElementById('banner-severity');
+    const act = document.getElementById('banner-active');
+    if(txt) txt.value = b.text || '';
+    if(sev) sev.value = b.severity || 'info';
+    if(act) act.checked = b.active === true;
+    const status = document.getElementById('banner-status');
+    if(status){ status.classList.add('hidden'); status.textContent = ''; }
+  } catch(e){
+    console.warn('[banner-load] failed:', e);
+  }
+}
+
+window.saveSystemBanner = async () => {
+  if(!isAdmin) return;
+  const text = (document.getElementById('banner-text').value || '').slice(0, 280);
+  const severity = document.getElementById('banner-severity').value;
+  const active = document.getElementById('banner-active').checked === true;
+  const status = document.getElementById('banner-status');
+  try {
+    await set(ref(db, 'systemBanner'), {
+      text, severity, active, updatedAt: Date.now()
+    });
+    if(status){
+      status.classList.remove('hidden');
+      status.style.background = 'var(--green-light)';
+      status.style.color = 'var(--green)';
+      status.textContent = '✓ Banner gespeichert.';
+    }
+    // Lokalen Dismiss-Cache zurücksetzen, damit der Admin den eigenen Banner sieht
+    try { localStorage.removeItem(BANNER_DISMISS_KEY); } catch(e){}
+  } catch(e){
+    if(status){
+      status.classList.remove('hidden');
+      status.style.background = 'var(--red-light)';
+      status.style.color = 'var(--red)';
+      status.textContent = 'Speichern fehlgeschlagen: ' + (e?.message||e);
+    }
+  }
 };
 
 window.adminDeleteFeedback = async (id) => {
@@ -1215,6 +1357,7 @@ window.deleteFamily = async() => {
       try{ await remove(ref(db,`familyCodes/${oldCode}`)); } catch(_){ /* code may not exist */ }
     }
     await remove(ref(db,`families/${fid}`));
+    bumpStat('familyCount', -1);
     await remove(ref(db,`users/${currentUser.uid}/families/${fid}`));
     if(typeof showPantryToast === 'function'){ showPantryToast('Familie gelöscht.'); }
     await switchToFirstAvailableFamilyOrChoice();
@@ -1385,6 +1528,7 @@ window.createFamilyFromSwitcher = async() => {
   await set(ref(db,`familyCodes/${code}`), fid);
   await update(ref(db,`users/${currentUser.uid}/families`), { [fid]:{ name, role:'admin' } });
   await seedStarterRecipes(fid);
+  bumpStat('familyCount', +1);
   await switchToFamily(fid);
   closeModal('family-switcher-modal');
 };
