@@ -1,7 +1,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { initializeAppCheck, ReCaptchaV3Provider } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app-check.js";
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, updateProfile, sendEmailVerification, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-import { getDatabase, ref, set, get, push, onValue, update, remove, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+import { getDatabase, ref, set, get, push, onValue, update, remove, serverTimestamp, query, limitToLast, orderByChild } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 
 const app = initializeApp({
   apiKey: "AIzaSyCwEc0C3hBaWeipnxIoGY_ugmtH1znuvZ4",
@@ -698,7 +698,7 @@ function loadApp(){
     });
   }
 
-  listenFamily(); listenPantry(); listenRecipes(); listenShopping(); listenWeekPlan(); listenStaples();
+  listenFamily(); listenPantry(); listenRecipes(); listenShopping(); listenWeekPlan(); listenStaples(); listenAuditLog();
   buildWeekGrid();
   // Ensure the "Meine Familien" list on the family page is fresh, not stale, on first load.
   loadAllUserFamilies().then(()=>renderAllFamiliesList()).catch(()=>{});
@@ -744,6 +744,57 @@ function listenFamily(){
     }
     renderFamilyMembers();
     renderAllFamiliesList();
+  });
+}
+
+const AUDIT_ACTION_LABELS = {
+  'rotate-code':   { icon: '🔄', verb: 'hat den Einladungscode erneuert' },
+  'leave-family':  { icon: '🚪', verb: 'hat die Familie verlassen' },
+  'delete-recipe': { icon: '🗑',  verb: 'hat ein Rezept gelöscht' }
+};
+
+function formatRelativeTime(ts){
+  if(!ts || typeof ts !== 'number') return '';
+  const diff = Date.now() - ts;
+  if(diff < 0) return 'gerade eben';
+  const min = Math.floor(diff / 60000);
+  if(min < 1) return 'gerade eben';
+  if(min < 60) return `vor ${min} Min`;
+  const h = Math.floor(min / 60);
+  if(h < 24) return `vor ${h} Std`;
+  const d = Math.floor(h / 24);
+  if(d < 7) return `vor ${d} Tg`;
+  return new Date(ts).toLocaleDateString('de-DE', { day:'2-digit', month:'2-digit', year:'2-digit' });
+}
+
+function listenAuditLog(){
+  if(!familyId || isDemoMode) return;
+  const q = query(ref(db, `families/${familyId}/auditLog`), orderByChild('ts'), limitToLast(50));
+  onValue(q, snap => {
+    const list = document.getElementById('audit-log-list');
+    if(!list) return;
+    if(!snap.exists()){
+      list.innerHTML = '<div style="font-size:13px;color:var(--text2);font-style:italic">Noch keine Aktivität.</div>';
+      return;
+    }
+    const entries = [];
+    snap.forEach(child => { entries.push(child.val()); });
+    entries.reverse(); // neueste zuerst
+    list.innerHTML = entries.map(e => {
+      const label = AUDIT_ACTION_LABELS[e.action] || { icon: '•', verb: esc(e.action || 'unbekannt') };
+      const who = esc(e.actorName || 'Jemand');
+      const target = e.targetName ? ` <em style="color:var(--text2)">„${esc(e.targetName)}"</em>` : '';
+      const when = formatRelativeTime(e.ts);
+      return `<div style="display:flex;gap:10px;align-items:flex-start;padding:8px 10px;background:var(--surface2);border-radius:8px;font-size:13px">
+        <span style="font-size:16px;flex-shrink:0">${label.icon}</span>
+        <div style="flex:1;min-width:0">
+          <div><strong>${who}</strong> ${label.verb}${target}</div>
+          <div style="font-size:11px;color:var(--text2);margin-top:2px">${esc(when)}</div>
+        </div>
+      </div>`;
+    }).join('');
+  }, err => {
+    console.warn('[audit] read failed:', err?.message || err);
   });
 }
 
