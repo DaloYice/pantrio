@@ -24,7 +24,7 @@ initializeAppCheck(app, {
 const auth = getAuth(app);
 const db = getDatabase(app);
 
-const APP_VERSION = '0.9.17';
+const APP_VERSION = '0.9.18';
 
 // Register the service worker for PWA install + offline shell.
 // Registered after Firebase init so the page is interactive first.
@@ -721,6 +721,7 @@ onAuthStateChanged(auth, async user=>{
     listenUserAuditLog();
     listenAdminStatus();
     listenSystemBanner();
+    listenMarketplace();
     const snap=await get(ref(db,`users/${user.uid}/familyId`));
     if(snap.exists()){ familyId=snap.val(); loadApp(); }
     else{ document.getElementById('family-screen').classList.remove('hidden'); }
@@ -2184,6 +2185,7 @@ window.showDetail=(id)=>{
         <button class="btn btn-outline btn-sm" data-action="printRecipe" title="Rezept drucken">🖨 Drucken</button>
         <button class="btn btn-red btn-sm" data-action="deleteRecipe" data-arg="${id}">🗑</button>
       </div>
+      ${renderShareToggle(id, r)}
     `;
 
     document.getElementById('d-minus').onclick=()=>{ if(currentPortions>1){ currentPortions--; render(); } };
@@ -2192,6 +2194,235 @@ window.showDetail=(id)=>{
 
   render();
   showPage('detail-page');
+};
+
+// ─── MARKTPLATZ ───
+const MARKETPLACE_LIMIT_PER_FAMILY = 20;
+let marketplaceCache = [];
+let marketplaceFilter = '';
+let marketplaceSort = 'new';
+
+function isCurrentUserFamilyAdmin(){
+  return !!(familyData && currentUser && familyData.members?.[currentUser.uid]?.role === 'admin');
+}
+
+function renderShareToggle(id, r){
+  if(isDemoMode) return '';
+  if(!isCurrentUserFamilyAdmin()) return '';
+  const isShared = !!r.publishedAs;
+  return `<div style="margin-top:14px;padding:14px;background:var(--surface2);border-radius:10px">
+    <div style="display:flex;align-items:flex-start;gap:10px">
+      <div style="font-size:20px">🌍</div>
+      <div style="flex:1">
+        <div style="font-weight:600;font-size:14px;margin-bottom:4px">Mit anderen Familien teilen</div>
+        <div style="font-size:12px;color:var(--text2);line-height:1.4">${isShared
+          ? `Dieses Rezept ist im Marktplatz veröffentlicht. ${typeof r.copies === 'number' ? `<strong>${r.copies}x übernommen</strong>` : ''}`
+          : 'Andere Familien können das Rezept im Marktplatz finden und in ihre Sammlung übernehmen.'}</div>
+        ${isShared ? '' : `<label style="display:flex;align-items:center;gap:6px;font-size:12px;margin-top:8px;cursor:pointer"><input type="checkbox" id="share-anonymous-${esc(id)}"><span>Anonym veröffentlichen (ohne Familien- und Nutzername)</span></label>`}
+      </div>
+    </div>
+    <div style="margin-top:10px">
+      ${isShared
+        ? `<button class="btn btn-outline btn-sm" data-action="unpublishRecipe" data-arg="${esc(id)}" style="width:100%">🔒 Vom Marktplatz nehmen</button>`
+        : `<button class="btn btn-primary btn-sm" data-action="publishRecipe" data-arg="${esc(id)}" style="width:100%">🌍 Veröffentlichen</button>`}
+    </div>
+  </div>`;
+}
+
+window.publishRecipe = async (id) => {
+  if(isDemoMode){ alert('Im Demo-Modus nicht verfügbar.'); return; }
+  if(!isCurrentUserFamilyAdmin()){ alert('Nur Familien-Admins können Rezepte veröffentlichen.'); return; }
+  const r = recipes[id];
+  if(!r) return;
+  if(r.publishedAs){ alert('Rezept ist bereits veröffentlicht.'); return; }
+  // Soft-Limit
+  const sharedCount = Object.values(recipes).filter(x => !!x.publishedAs).length;
+  if(sharedCount >= MARKETPLACE_LIMIT_PER_FAMILY){
+    alert(`Limit erreicht: max ${MARKETPLACE_LIMIT_PER_FAMILY} öffentliche Rezepte pro Familie. Nimm zuerst eines vom Marktplatz, bevor du ein neues teilst.`);
+    return;
+  }
+  const anonChk = document.getElementById(`share-anonymous-${id}`);
+  const anonymous = !!(anonChk && anonChk.checked);
+  const snapshot = {
+    name: r.name || '',
+    emoji: r.emoji || '',
+    category: r.category || '',
+    difficulty: r.difficulty || '',
+    description: r.description || '',
+    portions: r.portions || 4,
+    ingredients: Array.isArray(r.ingredients) ? r.ingredients : [],
+    steps: Array.isArray(r.steps) ? r.steps : [],
+    sourceFamilyId: familyId,
+    sourceRecipeId: id,
+    publishedAt: Date.now(),
+    anonymous,
+    copies: 0
+  };
+  if(!anonymous){
+    snapshot.publishedBy = {
+      familyName: (familyData?.name || 'Familie').slice(0, 80),
+      userName: (currentUser?.displayName || '').slice(0, 80)
+    };
+  }
+  try {
+    const newRef = push(ref(db, 'publicRecipes'));
+    await set(newRef, snapshot);
+    await set(ref(db, `families/${familyId}/recipes/${id}/publishedAs`), newRef.key);
+    if(typeof showPantryToast === 'function') showPantryToast('Rezept veröffentlicht! 🌍');
+    showDetail(id); // re-render mit neuem State
+  } catch(e){
+    alert('Veröffentlichen fehlgeschlagen: ' + (e?.message || e));
+  }
+};
+
+window.unpublishRecipe = async (id) => {
+  if(isDemoMode) return;
+  if(!isCurrentUserFamilyAdmin()){ alert('Nur Familien-Admins können das tun.'); return; }
+  const r = recipes[id];
+  if(!r || !r.publishedAs) return;
+  if(!confirm('Rezept vom Marktplatz nehmen? Andere Familien können es danach nicht mehr finden (bereits übernommene Kopien bleiben).')) return;
+  const publishId = r.publishedAs;
+  try {
+    await remove(ref(db, `publicRecipes/${publishId}`));
+    await set(ref(db, `families/${familyId}/recipes/${id}/publishedAs`), null);
+    if(typeof showPantryToast === 'function') showPantryToast('Vom Marktplatz genommen.');
+    showDetail(id);
+  } catch(e){
+    alert('Fehler: ' + (e?.message || e));
+  }
+};
+
+function listenMarketplace(){
+  if(isDemoMode) return;
+  const q = query(ref(db, 'publicRecipes'), orderByChild('publishedAt'), limitToLast(200));
+  onValue(q, snap => {
+    marketplaceCache = [];
+    if(snap.exists()){
+      snap.forEach(c => { marketplaceCache.push({ id: c.key, ...c.val() }); });
+      marketplaceCache.reverse();
+    }
+    renderMarketplace();
+  }, err => console.warn('[marketplace] read failed:', err?.message || err));
+}
+
+window.setMarketplaceSort = (sort) => {
+  marketplaceSort = sort;
+  document.getElementById('mp-sort-new').style.background = sort === 'new' ? 'var(--green)' : 'var(--surface)';
+  document.getElementById('mp-sort-new').style.color = sort === 'new' ? 'white' : 'var(--text)';
+  document.getElementById('mp-sort-pop').style.background = sort === 'pop' ? 'var(--green)' : 'var(--surface)';
+  document.getElementById('mp-sort-pop').style.color = sort === 'pop' ? 'white' : 'var(--text)';
+  renderMarketplace();
+};
+
+window.filterMarketplace = (val) => {
+  marketplaceFilter = (val || '').toLowerCase().trim();
+  renderMarketplace();
+};
+
+function renderMarketplace(){
+  const container = document.getElementById('marketplace-cards');
+  if(!container) return;
+  let list = marketplaceCache.slice();
+  if(marketplaceFilter){
+    list = list.filter(r => (r.name || '').toLowerCase().includes(marketplaceFilter));
+  }
+  if(marketplaceSort === 'pop'){
+    list.sort((a, b) => (b.copies || 0) - (a.copies || 0));
+  }
+  if(list.length === 0){
+    container.innerHTML = '<div class="empty-state"><div class="ei" aria-hidden="true">🌍</div><h3>Marktplatz ist leer</h3><p>Noch keine geteilten Rezepte. Sei die erste Familie und teile eines!</p></div>';
+    return;
+  }
+  container.innerHTML = list.map(r => {
+    const author = r.anonymous
+      ? '<em style="color:var(--text2)">anonym</em>'
+      : esc(r.publishedBy?.familyName || 'Familie');
+    return `<div class="recipe-card" data-action="showMarketplaceDetail" data-arg="${esc(r.id)}" style="cursor:pointer">
+      <div class="rc-emoji">${esc(r.emoji || '🍽')}</div>
+      <div class="rc-content">
+        <div class="rc-name">${esc(r.name || '')}</div>
+        <div class="rc-meta">
+          <span>${esc(r.category || 'Sonstiges')}</span>
+          ${r.copies ? `<span> · 📥 ${esc(String(r.copies))}</span>` : ''}
+          <span> · von ${author}</span>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+window.showMarketplaceDetail = (publishId) => {
+  const r = marketplaceCache.find(x => x.id === publishId);
+  if(!r){ alert('Rezept nicht gefunden.'); return; }
+  const author = r.anonymous
+    ? '<em style="color:var(--text2)">anonym geteilt</em>'
+    : `geteilt von <strong>${esc(r.publishedBy?.familyName || 'Familie')}</strong>${r.publishedBy?.userName ? ` (${esc(r.publishedBy.userName)})` : ''}`;
+  const isMine = r.sourceFamilyId === familyId;
+  const isAlreadyImported = Object.values(recipes).some(x => x.importedFrom?.publishId === publishId);
+  document.getElementById('marketplace-detail-content').innerHTML = `
+    <div class="detail-hero">
+      <div class="detail-emoji">${esc(r.emoji || '🍽')}</div>
+      <div class="detail-title">${esc(r.name)}</div>
+      <div class="detail-tags">
+        <span class="tag" style="background:var(--green-light);color:var(--green)">${esc(r.category || 'Sonstiges')}</span>
+        ${r.difficulty ? `<span class="tag">${esc(r.difficulty)}</span>` : ''}
+        ${r.copies ? `<span class="tag">📥 ${esc(String(r.copies))}x übernommen</span>` : ''}
+      </div>
+      <p class="detail-desc" style="font-size:12px;color:var(--text2)">${author}</p>
+      ${r.description ? `<p class="detail-desc">${esc(r.description)}</p>` : ''}
+    </div>
+    ${(r.ingredients || []).length > 0 ? `
+      <div class="ingredients-block">
+        <div class="block-header">🥕 Zutaten</div>
+        ${(r.ingredients || []).map(ing => `<div class="ingredient-row-item">
+          <div class="ing-name-col">${esc(ing.name || '')}</div>
+          <div class="ing-amount-col">${esc(ing.amount || '')} ${esc(ing.unit || '')}</div>
+        </div>`).join('')}
+      </div>` : ''}
+    ${(r.steps || []).length > 0 ? `
+      <div class="steps-block">
+        <div class="block-header">👨‍🍳 Zubereitung</div>
+        ${(r.steps || []).map((s, i) => `<div class="step-row-item"><div class="step-num">${i + 1}</div><div class="step-text">${esc(s)}</div></div>`).join('')}
+      </div>` : ''}
+    <div class="detail-actions">
+      ${isMine
+        ? '<div style="font-size:13px;color:var(--text2);font-style:italic;padding:10px">Das ist dein eigenes Rezept – andere Familien sehen das hier so.</div>'
+        : isAlreadyImported
+          ? '<div style="font-size:13px;color:var(--green);padding:10px">✓ Bereits in deine Sammlung übernommen</div>'
+          : `<button class="btn btn-primary" data-action="importPublicRecipe" data-arg="${esc(r.id)}" style="width:100%">📥 In meine Sammlung übernehmen</button>`}
+    </div>
+  `;
+  showPage('marketplace-detail-page');
+};
+
+window.importPublicRecipe = async (publishId) => {
+  if(isDemoMode){ alert('Im Demo-Modus nicht verfügbar.'); return; }
+  if(!familyId){ alert('Bitte erst einer Familie beitreten.'); return; }
+  const r = marketplaceCache.find(x => x.id === publishId);
+  if(!r) return;
+  const newRecipe = {
+    name: r.name || '',
+    emoji: r.emoji || '',
+    category: r.category || '',
+    difficulty: r.difficulty || '',
+    description: r.description || '',
+    portions: r.portions || 4,
+    ingredients: Array.isArray(r.ingredients) ? r.ingredients : [],
+    steps: Array.isArray(r.steps) ? r.steps : [],
+    importedFrom: {
+      publishId,
+      familyName: r.anonymous ? '' : (r.publishedBy?.familyName || ''),
+      importedAt: Date.now()
+    }
+  };
+  try {
+    await push(ref(db, `families/${familyId}/recipes`), newRecipe);
+    runTransaction(ref(db, `publicRecipes/${publishId}/copies`), v => (typeof v === 'number' ? v : 0) + 1).catch(() => {});
+    if(typeof showPantryToast === 'function') showPantryToast('In deine Sammlung übernommen ✨');
+    showPage('recipes-page');
+  } catch(e){
+    alert('Übernehmen fehlgeschlagen: ' + (e?.message || e));
+  }
 };
 
 window.deleteRecipe=async(id)=>{
