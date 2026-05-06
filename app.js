@@ -1,7 +1,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { initializeAppCheck, ReCaptchaV3Provider } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app-check.js";
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, updateProfile, sendEmailVerification, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-import { getDatabase, ref, set, get, push, onValue, update, remove } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+import { getDatabase, ref, set, get, push, onValue, update, remove, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 
 const app = initializeApp({
   apiKey: "AIzaSyCwEc0C3hBaWeipnxIoGY_ugmtH1znuvZ4",
@@ -747,6 +747,27 @@ function listenFamily(){
   });
 }
 
+async function logAudit(fid, action, extra){
+  if(!fid || !currentUser || isDemoMode) return;
+  try {
+    const entry = {
+      action,
+      actorUid: currentUser.uid,
+      ts: serverTimestamp()
+    };
+    const name = currentUser.displayName;
+    if (name) entry.actorName = name.slice(0, 80);
+    if (extra && typeof extra === 'object'){
+      if (extra.targetId) entry.targetId = String(extra.targetId).slice(0, 128);
+      if (extra.targetName) entry.targetName = String(extra.targetName).slice(0, 200);
+      if (extra.meta) entry.meta = String(extra.meta).slice(0, 500);
+    }
+    await push(ref(db, `families/${fid}/auditLog`), entry);
+  } catch(e){
+    console.warn('[audit] write failed:', e?.message || e);
+  }
+}
+
 window.rotateInviteCode = async() => {
   if(!currentUser||!familyId||!familyData) return;
   if(familyData.members?.[currentUser.uid]?.role !== 'admin'){
@@ -762,6 +783,7 @@ window.rotateInviteCode = async() => {
     if(oldCode && oldCode !== newCode){
       await remove(ref(db,`familyCodes/${oldCode}`));
     }
+    await logAudit(familyId, 'rotate-code', { meta: 'code rotated' });
     if(typeof showPantryToast === 'function'){ showPantryToast('Neuer Code: '+newCode); }
     else { alert('Neuer Code: '+newCode); }
   } catch(e){
@@ -795,6 +817,7 @@ window.leaveFamily = async() => {
   }
   if(!confirm(`„${familyData.name||'Familie'}" wirklich verlassen?\n\nDeine Beiträge in anderen Familien bleiben erhalten.`)) return;
   try{
+    await logAudit(familyId, 'leave-family', { targetName: familyData.name || '' });
     await remove(ref(db,`families/${familyId}/members/${currentUser.uid}`));
     await remove(ref(db,`users/${currentUser.uid}/families/${familyId}`));
     if(typeof showPantryToast === 'function'){ showPantryToast('Familie verlassen.'); }
@@ -1659,6 +1682,8 @@ window.showDetail=(id)=>{
 window.deleteRecipe=async(id)=>{
   if(!confirm('Rezept wirklich löschen?')) return;
   if(isDemoMode){ delete recipes[id]; renderRecipes(); renderHome(); showPage('recipes-page'); return; }
+  const recipeName = recipes?.[id]?.name || '';
+  await logAudit(familyId, 'delete-recipe', { targetId: id, targetName: recipeName });
   await remove(ref(db,`families/${familyId}/recipes/${id}`));
   showPage('recipes-page');
 };
