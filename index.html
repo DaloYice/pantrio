@@ -607,6 +607,7 @@
       <button class="admin-tab active" id="admin-tab-feedback" data-action="switchAdminTab" data-arg="feedback" style="padding:10px 14px;border:none;background:none;font-size:14px;font-weight:600;color:var(--text);border-bottom:2px solid var(--green);cursor:pointer">💬 Feedback</button>
       <button class="admin-tab" id="admin-tab-stats" data-action="switchAdminTab" data-arg="stats" style="padding:10px 14px;border:none;background:none;font-size:14px;font-weight:600;color:var(--text2);border-bottom:2px solid transparent;cursor:pointer">📊 Stats</button>
       <button class="admin-tab" id="admin-tab-system" data-action="switchAdminTab" data-arg="system" style="padding:10px 14px;border:none;background:none;font-size:14px;font-weight:600;color:var(--text2);border-bottom:2px solid transparent;cursor:pointer">📢 System</button>
+      <button class="admin-tab" id="admin-tab-marketplace" data-action="switchAdminTab" data-arg="marketplace" style="padding:10px 14px;border:none;background:none;font-size:14px;font-weight:600;color:var(--text2);border-bottom:2px solid transparent;cursor:pointer">🌍 Marktplatz</button>
     </div>
 
     <!-- Feedback-Tab -->
@@ -652,6 +653,14 @@
       </div>
       <div id="banner-status" class="hidden" style="font-size:13px;padding:8px 10px;border-radius:6px;margin-bottom:10px"></div>
       <button class="btn btn-primary" data-action="saveSystemBanner" style="width:100%">Speichern</button>
+    </div>
+
+    <!-- Marktplatz-Moderation-Tab -->
+    <div id="admin-tab-content-marketplace" class="admin-tab-content hidden">
+      <p style="font-size:13px;color:var(--text2);line-height:1.4;margin-bottom:14px">Alle veröffentlichten Rezepte im Marktplatz. Als globaler Admin kannst du jeden Eintrag entfernen (Moderation).</p>
+      <div id="admin-marketplace-list" style="display:flex;flex-direction:column;gap:10px">
+        <div style="font-size:13px;color:var(--text2);font-style:italic">Lädt…</div>
+      </div>
     </div>
   </div>
 

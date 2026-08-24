@@ -24,7 +24,7 @@ initializeAppCheck(app, {
 const auth = getAuth(app);
 const db = getDatabase(app);
 
-const APP_VERSION = '0.9.18';
+const APP_VERSION = '0.9.19';
 
 // Register the service worker for PWA install + offline shell.
 // Registered after Firebase init so the page is interactive first.
@@ -954,7 +954,8 @@ function syncAdminUi(){
 window.switchAdminTab = (tab) => {
   if(tab === 'stats') loadAdminStats();
   if(tab === 'system') loadAdminBanner();
-  ['feedback','stats','system'].forEach(t => {
+  if(tab === 'marketplace') renderAdminMarketplace();
+  ['feedback','stats','system','marketplace'].forEach(t => {
     const btn = document.getElementById(`admin-tab-${t}`);
     const content = document.getElementById(`admin-tab-content-${t}`);
     if(!btn || !content) return;
@@ -1074,7 +1075,7 @@ async function loadAdminStats(){
       card('Feedback gesamt', feedbackTotal, ''),
       card('Davon neu', feedbackNew, '🔴 ungelesen'),
       card('App-Version', APP_VERSION, ''),
-      card('SW-Cache', 'pantrio-shell-v7', '')
+      card('SW-Cache', 'pantrio-shell-v8', '')
     ].join('');
   } catch(e){
     list.innerHTML = `<div style="font-size:13px;color:var(--red);padding:14px">Stats-Read fehlgeschlagen: ${esc(e?.message||String(e))}</div>`;
@@ -1131,6 +1132,46 @@ window.adminDeleteFeedback = async (id) => {
   if(!confirm('Feedback wirklich löschen?')) return;
   try {
     await remove(ref(db, `feedback/${id}`));
+  } catch(e){
+    alert('Löschen fehlgeschlagen: ' + (e?.message||e));
+  }
+};
+
+function renderAdminMarketplace(){
+  const list = document.getElementById('admin-marketplace-list');
+  if(!list) return;
+  if(!Array.isArray(marketplaceCache) || marketplaceCache.length === 0){
+    list.innerHTML = '<div style="font-size:13px;color:var(--text2);font-style:italic;padding:14px">Der Marktplatz ist leer.</div>';
+    return;
+  }
+  list.innerHTML = marketplaceCache.map(r => {
+    const author = r.anonymous
+      ? '<em style="color:var(--text2)">anonym</em>'
+      : esc(r.publishedBy?.familyName || 'Familie') + (r.publishedBy?.userName ? ' <span style="color:var(--text2)">(' + esc(r.publishedBy.userName) + ')</span>' : '');
+    const when = r.publishedAt ? formatRelativeTime(r.publishedAt) : '';
+    const copies = typeof r.copies === 'number' ? r.copies : 0;
+    return `<div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px">
+      <div style="display:flex;justify-content:space-between;gap:8px;align-items:flex-start;margin-bottom:6px">
+        <div style="font-size:15px;font-weight:700">${esc(r.emoji || '🍽')} ${esc(r.name || '(ohne Name)')}</div>
+        <div style="font-size:11px;font-weight:700;color:var(--text2)">📥 ${esc(String(copies))}x</div>
+      </div>
+      <div style="font-size:12px;color:var(--text2);margin-bottom:10px">${esc(r.category || 'Sonstiges')} · von ${author}${when ? ' · ' + esc(when) : ''}</div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
+        <button class="btn btn-outline btn-sm" data-action="showMarketplaceDetail" data-arg="${esc(r.id)}">🔍 Ansehen</button>
+        <button class="btn btn-outline btn-sm" data-action="adminDeleteMarketplace" data-arg="${esc(r.id)}" style="border-color:var(--red);color:var(--red)">🗑 Löschen</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+window.adminDeleteMarketplace = async (publishId) => {
+  if(!isAdmin) return;
+  const r = (marketplaceCache || []).find(x => x.id === publishId);
+  const label = r ? `„${r.name || '(ohne Name)'}"` : 'diesen Eintrag';
+  if(!confirm(`Marktplatz-Eintrag ${label} wirklich löschen? Bereits übernommene Kopien in anderen Familien bleiben unberührt.`)) return;
+  try {
+    await remove(ref(db, `publicRecipes/${publishId}`));
+    if(typeof showPantryToast === 'function') showPantryToast('Vom Marktplatz entfernt.');
   } catch(e){
     alert('Löschen fehlgeschlagen: ' + (e?.message||e));
   }
@@ -2302,6 +2343,12 @@ function listenMarketplace(){
       marketplaceCache.reverse();
     }
     renderMarketplace();
+    if(isAdmin){
+      const admList = document.getElementById('admin-marketplace-list');
+      if(admList && !admList.closest('.admin-tab-content')?.classList.contains('hidden')){
+        renderAdminMarketplace();
+      }
+    }
   }, err => console.warn('[marketplace] read failed:', err?.message || err));
 }
 
